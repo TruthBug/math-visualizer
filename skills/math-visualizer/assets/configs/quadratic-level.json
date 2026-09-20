@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "title": "方程的解为什么对应交点横坐标",
+  "equation": "(x − 1)<sup>2</sup> = k",
+  "problem": "讨论 (x−1)²=k 的实数解个数。",
+  "source": "自编教学例题；适用于已学习二次函数和平方根的学生。",
+  "teacher": "先让学生预测，再操作 k。强调交点的横坐标才是方程的解。收尾撤图提问：(x+2)²=k−3 的临界值在哪里？预期理由是平方非负，临界值为 k=3。",
+  "scenes": [
+    {
+      "module": "quadratic-level",
+      "model": {
+        "a": 1,
+        "h": 1,
+        "v": 0
+      },
+      "view": {
+        "xMin": -3,
+        "xMax": 5,
+        "yMin": -2,
+        "yMax": 6,
+        "tick": 1,
+        "title": "蓝色抛物线与橙色水平线"
+      },
+      "control": {
+        "type": "drag",
+        "label": "原题参数 k（演示范围）",
+        "min": -2,
+        "max": 5,
+        "step": 0.25,
+        "initial": 1,
+        "stops": [
+          -1,
+          0,
+          1
+        ]
+      },
+      "steps": [
+        {
+          "title": "先预测交点如何变化",
+          "body": "蓝色是 y=(x−1)²，橙色是 y=k。交点处两个纵坐标相同，因此交点横坐标满足原方程。",
+          "formula": "(x−1)²=k",
+          "question": "哪个位置可能改变解的个数？先说理由。",
+          "layers": [
+            "curve",
+            "level"
+          ],
+          "interactive": true,
+          "tab": "预测"
+        },
+        {
+          "title": "比较临界值两侧",
+          "body": "当前 k={{k}}，有 {{count}} 个不同交点。按钮可以准确到达关键位置，不必靠拖动猜测。",
+          "formula": "临界高度 k={{critical}}",
+          "question": "为什么变化发生在顶点高度？",
+          "layers": [
+            "curve",
+            "level",
+            "intersections"
+          ],
+          "interactive": true,
+          "tab": "观察"
+        },
+        {
+          "title": "用代数说明全部情况",
+          "body": "平方非负，所以 k<0 无实数解；k=0 只有 x=1；k>0 有两个不同的实数解。这个结论覆盖整个实数范围，不仅是滑块演示区间。",
+          "formula": "k>0 时：x=1±√k",
+          "question": "撤掉图，你能说明 (x+2)²=k−3 的临界值吗？",
+          "layers": [
+            "curve",
+            "level",
+            "intersections"
+          ],
+          "interactive": false,
+          "tab": "解释"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,153 @@
+/* 统一课堂壳：所有生成页面共享的设计系统。
+   页眉（品牌/备课提示开关）· 引言区 · 图解区 · 参数栏 · 步骤页脚。
+   保留旧类钩子：.stage .visual .explanation .formula .note .controls .source
+   .cards .number .removed .selected table .teaching-summary #purpose .without-visual */
+:root {
+  color-scheme: light;
+  --bg: #f7f8fa; --ink: #202631; --muted: #596374;
+  --blue: #315eca; --orange: #b65320; --green: #23796d; --line: #d7dce3;
+  /* 语义色别名：蓝=固定/主对象，橙=可调/比较，绿=关系/辅助。可通过语义变量统一调整这些角色的颜色。 */
+  --primary: var(--blue); --compare: var(--orange); --relation: var(--green);
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  font-size: 20px; color: var(--ink); background: var(--bg); font-synthesis: none;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 1500px; margin: auto; padding: 0 40px; }
+[hidden] { display: none !important; }
+
+/* 控件基础 */
+button, input, select { font: inherit; }
+button { color: inherit; cursor: pointer; background: none; border: 1px solid var(--line); border-radius: 5px; min-height: 46px; padding: 9px 16px; font-size: 18px; }
+button:hover { background: #e9edf3; }
+button:focus-visible, input:focus-visible, [role="slider"]:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+button:disabled { opacity: .4; cursor: default; }
+button.primary { background: var(--ink); color: #fff; border-color: var(--ink); min-width: 140px; }
+button.primary:hover { background: #364050; }
+button.quiet { border: 0; color: var(--muted); font-size: 16px; white-space: nowrap; }
+input[type="range"] { accent-color: var(--orange); cursor: pointer; height: 30px; margin: 0; }
+a { color: var(--blue); }
+
+/* 页眉 */
+header { height: 76px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 20px; font-size: 18px; }
+.identity { display: flex; align-items: center; gap: 14px; }
+.mark { font-size: 34px; color: var(--blue); transform: rotate(180deg); line-height: 1; }
+.edition { color: var(--muted); margin-left: 20px; font-size: 16px; }
+header button { font-size: 16px; border: 0; color: var(--muted); }
+#notes { border-bottom: 1px solid var(--line); font-size: 19px; line-height: 1.7; padding: 10px 0 14px; }
+#notes p { margin: 6px 0; }
+
+/* 引言区 */
+.intro { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 24px 0 10px; }
+.eyebrow { font-size: 18px; margin: 0 0 8px; color: var(--muted); }
+h1 { font-size: 30px; line-height: 1.4; font-weight: 600; margin: 0; letter-spacing: .01em; }
+.equation { font-size: 36px; white-space: nowrap; font-family: Georgia, "Times New Roman", serif; }
+.equation sup, .equation sub { font-size: .6em; }
+.orange { color: var(--orange); }
+
+/* 图解区与讲解区 */
+.stage { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(340px, 1fr); gap: 32px; align-items: start; padding: 12px 0 22px; }
+.without-visual { grid-template-columns: 1fr; }
+.without-visual .explanation { max-width: 960px; }
+.visual, .explanation { min-width: 0; }
+.visual svg { display: block; width: 100%; height: auto; }
+/* 画布内拖动（control.type='drag'）：player 负责事件/焦点/aria，这里只给光标与触摸语义 */
+#visual[role="slider"] { touch-action: none; }
+#visual.drag-y { cursor: ns-resize; }
+#visual.drag-x { cursor: ew-resize; }
+.explanation { font-size: 21px; line-height: 1.55; }
+.explanation h2 { font-size: 25px; line-height: 1.5; font-weight: 500; margin: 0 0 14px; }
+.explanation p { margin: 0 0 14px; }
+.formula { font-size: 25px; line-height: 1.5; font-weight: 650; overflow-wrap: anywhere; padding: 8px 14px; background: #eef2fc; border-radius: 6px; margin: 10px 0 14px; }
+.note { font-size: 19px; color: var(--muted); line-height: 1.5; }
+.source { font-size: 16px; color: var(--muted); overflow-wrap: anywhere; }
+.source a { color: inherit; }
+.panel-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 12px; }
+.panel-controls label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 18px; color: var(--muted); }
+.panel-controls input[type="range"] { min-width: 150px; }
+.teaching-summary { margin: 8px 0 14px; }
+.teaching-summary p { margin: 4px 0; }
+#purpose { font-weight: 700; color: var(--blue); }
+summary { cursor: pointer; }
+
+/* 参数栏 */
+.parameter-bar, .parameter { display: flex; flex-wrap: wrap; align-items: center; gap: 26px; }
+.parameter-bar { border-top: 1px solid var(--line); padding: 18px 0 20px; }
+.parameter-bar > .quiet { order: 99; margin-left: auto; }
+.parameter { flex: 1; min-width: 280px; }
+.parameter-heading { display: grid; gap: 6px; min-width: 150px; }
+.parameter-heading > span, .parameter-heading label { font-size: 18px; color: var(--muted); }
+.parameter-heading output, output { font-size: 26px; color: var(--orange); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.range-wrap { flex: 1; min-width: 170px; }
+.range-wrap input[type="range"] { width: 100%; }
+.range-labels { display: flex; justify-content: space-between; font-size: 15px; color: var(--muted); gap: 8px; }
+.stops { display: flex; gap: 8px; }
+.stops button { min-width: 72px; display: grid; gap: 3px; font-size: 18px; }
+.stops button span { font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stops button[aria-pressed="true"] { border-color: var(--orange); color: var(--orange); background: #f9eee7; }
+
+/* 步骤页脚 */
+footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); min-height: 85px; gap: 20px; }
+.steps { display: flex; gap: 8px; flex-wrap: wrap; }
+.steps button { border: 0; border-top: 2px solid transparent; border-radius: 0; color: var(--muted); font-size: 16px; padding: 12px 10px; }
+.steps button span { margin-left: 6px; font-size: 18px; }
+.steps button[aria-current="step"] { border-top-color: var(--blue); color: var(--blue); }
+.navigation { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.counter { color: var(--muted); font-size: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* 离散卡片与表格（数列/概率等 HTML 呈现） */
+.cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; padding: 42px 10px; }
+.number { padding: 26px 22px; min-width: 88px; border: 2px solid var(--blue); border-radius: 12px; font-size: 44px; text-align: center; }
+.number small { display: block; font-size: 20px; margin-top: 4px; }
+.removed { color: var(--muted); border-style: dashed; text-decoration: line-through; }
+.selected { background: var(--blue); color: #fff; }
+table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+th, td { padding: 14px 16px; border: 1px solid var(--line); text-align: center; }
+th { background: #f0f3f8; }
+caption { color: var(--muted); padding-bottom: 8px; }
+
+@media (max-width: 1100px) {
+  main { padding: 0 26px; }
+}
+@media (max-width: 820px) {
+  main { padding: 0 16px; }
+  header { height: 62px; font-size: 15px; }
+  .identity { gap: 8px; }
+  .mark { font-size: 26px; }
+  header button { font-size: 14px; padding: 4px; }
+  .intro { display: block; padding: 18px 0 6px; }
+  h1 { font-size: 25px; }
+  .eyebrow { font-size: 16px; }
+  .equation { font-size: 30px; margin-top: 12px; }
+  .stage { grid-template-columns: 1fr; gap: 18px; padding: 10px 0 16px; }
+  .explanation { font-size: 20px; }
+  .parameter-bar { gap: 15px; padding: 16px 0; }
+  .parameter { min-width: 0; gap: 15px; }
+  .parameter-heading { min-width: 115px; }
+  .range-wrap { min-width: 170px; }
+  .stops { flex: 1; }
+  .stops button { min-width: 64px; flex: 1; }
+  footer { flex-direction: column; gap: 7px; padding: 10px 0 16px; align-items: stretch; }
+  .steps { width: 100%; justify-content: space-between; gap: 0; }
+  .steps button { padding: 12px 5px; }
+  .steps button span { font-size: 16px; margin-left: 3px; }
+  .navigation { width: 100%; justify-content: flex-end; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Short classroom screens keep the diagram, explanation and controls together.
+   SVG viewBox preserves mathematical scale; typography is not globally shrunk. */
+@media (min-width: 821px) and (max-height: 950px) {
+  header { height: 54px; }
+  .intro { padding: 12px 0 6px; }
+  .eyebrow { margin-bottom: 4px; }
+  .stage { padding: 8px 0 12px; gap: 24px; }
+  .visual svg { height: 380px; width: 100%; }
+  .visual svg text { font-size: 24px; }
+  .visual .note { margin: 6px 0; }
+  .parameter-bar { padding: 10px 0; gap: 16px; }
+  footer { min-height: 64px; gap: 12px; }
+  .steps button { padding: 10px 6px; }
+}

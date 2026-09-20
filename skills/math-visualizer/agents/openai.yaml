@@ -1,0 +1,4 @@
+interface:
+  display_name: "数学单题可视化"
+  short_description: "拆解数学题的理解难点，选择可视化工具，生成可操作讲解并核验数学与课堂呈现"
+  default_prompt: "使用 $math-visualizer 分析这道题，判断值得可视化的关键关系，生成适合老师演示的讲解并验证。"

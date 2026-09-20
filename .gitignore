@@ -1,0 +1,21 @@
+# Local lesson output and review records
+output/
+review-packets/
+**/reviews/
+*.build.json
+
+# Development and session material
+tests/
+*.test.cjs
+*-test-report.md
+.workbuddy/
+.zcode/
+.playwright-mcp/
+tmp/
+shots/
+__pycache__/
+*.py[cod]
+node_modules/
+.venv/
+.env
+.env.*

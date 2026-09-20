@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "title": "为什么比较半径和垂距，就能数交点？",
+  "equation": "x<sup>2</sup> + (y + 2)<sup>2</sup> = r<sup>2</sup>",
+  "problem": "2025 全国1卷第7题：圆 x²+(y+2)²=r²（r>0）上，到直线 y=√3x+2 的距离为1的点有且仅有两个，求 r 的范围。A.(0,1)；B.(1,3)；C.(3,+∞)；D.(0,+∞)。",
+  "source": "原题：deekur/gaokaomath，2025全国1，第7题，PDF第1页；提交 d5f0d0f66daa92051586b0850ecb1f3c0b14603f。课件为教学改编，来源许可见Skill案例SOURCES.md。",
+  "teacher": "本课利用真题建立圆与直线位置关系的概念，不以公布原题答案收尾。先让学生口述：垂距是最短距离，圆上点到圆心的距离固定为r；两个条件怎样同时满足？第三步暂停，让学生自己指出CH、HP、CP。最后撤图，预期回答r<d为0、r=d为1、r>d为2，理由是HP²=r²−d²的符号。这里d>0；若直线经过圆心，则r>0时总是两个交点。原题完整作答请用配套“原题讲解”课件。",
+  "teaching": {
+    "purpose": "concept",
+    "objective": "能用垂距与勾股关系解释：一条直线与圆为什么有0、1、2个交点。",
+    "prerequisites": "点到直线的距离、勾股定理、圆的定义；本次坐标构型用于概念复习或建立联系。",
+    "scope": "借原题研究关键概念；不完成原题选项判断。r是原题参数，圆心、直线和等距条件保持不变。"
+  },
+  "scenes": [
+    {
+      "module": "circle-line-distance",
+      "modelRef": "circle-2025-model.json",
+      "view": {
+        "xMin": -2.6,
+        "xMax": 2.6,
+        "yMin": -4.6,
+        "yMax": 0.9,
+        "tick": 1,
+        "title": "局部观察：较近轨迹与圆的垂距关系"
+      },
+      "control": {
+        "label": "观察半径 r（演示范围）",
+        "min": 0.25,
+        "max": 2.5,
+        "step": 0.25,
+        "initial": 2,
+        "stops": [
+          0.5,
+          1,
+          2,
+          2.5
+        ]
+      },
+      "steps": [
+        {
+          "title": "从距离条件找到两条轨迹",
+          "body": "灰色虚线是原直线。到它距离为1的点，在两侧各形成一条橙色平行线。此刻先不画圆，让学生说清楚：满足距离条件的点可以在哪里。",
+          "formula": "|√3x−y+2|=2 ⇒ y=√3x 或 y=√3x+4",
+          "question": "为什么必须有两侧？如果只画一条，漏掉了哪些点？",
+          "layers": [
+            "original",
+            "loci"
+          ],
+          "interactive": false,
+          "tab": "距离条件"
+        },
+        {
+          "title": "先只研究较近的那条线",
+          "body": "局部观察：蓝色圆心C保持不动，H是C到橙色直线的垂足。CH=1不变。先预测，再调r观察圆能否碰到这条线。另一条轨迹暂时隐藏；本步不报告交点数，让学生先自己数。",
+          "formula": "CH=d=1；圆上任意点到C的距离为r",
+          "question": "r<CH时，圆有没有可能在别处碰到这条线？为什么？",
+          "layers": [
+            "circle",
+            "near-locus",
+            "near-distance"
+          ],
+          "interactive": true,
+          "tab": "位置关系"
+        },
+        {
+          "title": "用直角三角形解释观察",
+          "body": "当前r={{r}}，较近直线与圆有{{nearCount}}个交点。相交时取一点P：绿色虚线CH是垂距d，紫色CP是半径r，橙色粗线HP是沿直线的距离。相切时P与H重合；不相交时不存在这样的P。",
+          "formula": "HP²=CP²−CH²=r²−d²",
+          "question": "为什么正数对应H两侧各一点，零对应一个点，负数对应没有点？",
+          "layers": [
+            "circle",
+            "near-locus",
+            "near-distance",
+            "near-intersections",
+            "near-triangle"
+          ],
+          "interactive": true,
+          "tab": "几何解释"
+        }
+      ]
+    },
+    {
+      "module": "circle-line-distance",
+      "modelRef": "circle-2025-model.json",
+      "view": {
+        "xMin": -5,
+        "xMax": 5,
+        "yMin": -6,
+        "yMax": 5,
+        "tick": 2,
+        "title": "圆、等距轨迹与垂直距离"
+      },
+      "control": {
+        "label": "观察半径 r（演示范围）",
+        "min": 0.25,
+        "max": 4,
+        "step": 0.25,
+        "initial": 2,
+        "stops": [
+          0.5,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "steps": [
+        {
+          "title": "把同一个判断用到第二条线",
+          "body": "现在扩大视窗，恢复两条橙色轨迹；坐标仍等比例。较近线的垂距为1，较远线为3。当前r={{r}}：两条线分别贡献{{nearCount}}与{{farCount}}个点。每条线各用一次刚才的判断，再合计即可。",
+          "formula": "各自比较r与垂距；不同平行线上的点不会重复",
+          "question": "先预测r=3时两条线各有几个交点，再用按钮验证。",
+          "layers": [
+            "circle",
+            "loci",
+            "distances",
+            "intersections"
+          ],
+          "interactive": true,
+          "tab": "另一条线"
+        },
+        {
+          "title": "撤掉图，保留判断依据",
+          "body": "现在用一般的垂距d>0代替本图中的数值。请学生口述三种情形和理由；暂不显示标准结论。",
+          "formula": "给定r>0、d>0：比较r与d",
+          "question": "若d=2，r=1、2、3时各有几个交点？不要只报数量，请解释为什么。",
+          "layers": [],
+          "interactive": false,
+          "showVisual": false,
+          "tab": "回顾"
+        }
+      ]
+    }
+  ]
+}
