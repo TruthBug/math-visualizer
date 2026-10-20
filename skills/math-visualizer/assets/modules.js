@@ -171,12 +171,14 @@
     for(const [lo,hi] of segments){
       const {xs,gs,found}=scan(lo,hi,Math.min(20000,Math.max(2000,Math.ceil((hi-lo)*500))));roots.push(...found);
       for(let i=0;i<xs.length;i++){const g0=gs[i];
-        if(g0===0){roots.push(xs[i]);continue;}
+        /* 孤立的零点才算根；连续一段恰为 0（两者在一段上重合，或数值下溢成 0）不按单个交点计。 */
+        if(g0===0){if((i===0||gs[i-1]!==0)&&(i===xs.length-1||gs[i+1]!==0))roots.push(xs[i]);continue;}
         if(i>0&&i<xs.length-1&&[gs[i-1],g0,gs[i+1]].every(Number.isFinite)&&gs[i-1]*g0>0&&g0*gs[i+1]>0&&Math.abs(g0)<=Math.abs(gs[i-1])&&Math.abs(g0)<=Math.abs(gs[i+1])){
           const fine=scan(xs[i-1],xs[i+1],200);if(fine.found.length){roots.push(...fine.found);continue;}
           let a=xs[i-1],b=xs[i+1];const k=(Math.sqrt(5)-1)/2;let c=b-k*(b-a),d=a+k*(b-a),fc=Math.abs(gv(c)),fd=Math.abs(gv(d));
           for(let it=0;it<120&&b-a>1e-15*Math.max(1,Math.abs(a));it++){if(fc<fd){b=d;d=c;fd=fc;c=b-k*(b-a);fc=Math.abs(gv(c));}else{a=c;c=d;fc=fd;d=a+k*(b-a);fd=Math.abs(gv(d));}}
-          const r=(a+b)/2;if(Math.abs(gv(r))<=tolAt(r))roots.push(r);}
+          /* 相切按相对量判定：极小值要比相邻采样点的差值小 7 个数量级以上。曲线贴着直线渐近时，相邻点的差值同样很小，不会被误判为切点。 */
+          const r=(a+b)/2;if(Math.abs(gv(r))<=1e-7*Math.max(Math.abs(gs[i-1]),Math.abs(gs[i+1])))roots.push(r);}
       }
     }
     roots.sort((u,v)=>u-v);
@@ -210,6 +212,19 @@
         d[`${c.id}.count`]=points.length;d.geo[c.id]=points;}
     }
     return d;
+  }
+  /* 供 --inspect 使用：交点只在 domain 内搜索，曲线有渐近线时 domain 截得太窄会少算交点。
+     用不受 domain 限制的原始表达式扫描 domain 两侧（各 20 倍宽度），发现域外交点就提醒。只检查 curve 与 hline。 */
+  function fgInspect(m,a){
+    const C=fgGet(m),P=C.param,out=[],raw=c=>c.type==='curve'?x=>c.f({x,[P]:a}):c.type==='hline'?()=>c.y({[P]:a}):null;
+    for(const c of C.objects){if(c.type!=='intersections')continue;
+      const [A,B]=c.of.map(id=>C.byId.get(id)),fa=raw(A),fb=raw(B);if(!fa||!fb)continue;
+      const segs=fgOverlap(A.segments,B.segments);if(!segs||!segs.length)continue;
+      const lo=segs[0][0],hi=segs[segs.length-1][1],w=hi-lo,g=x=>{const u=fa(x),v=fb(x);return [u-v,Math.abs(u)+Math.abs(v)];};
+      const outside=[...fgRoots(g,[[lo-20*w,lo]]).filter(x=>x<lo-1e-9*Math.max(1,Math.abs(lo))),...fgRoots(g,[[hi,hi+20*w]]).filter(x=>x>hi+1e-9*Math.max(1,Math.abs(hi)))];
+      if(outside.length)out.push(`交点对象 ${c.id}：${P}=${fmt(a)} 时，domain 之外还有 ${outside.length} 个交点（如 x≈${Number(outside[0].toPrecision(4))}），${c.id}.count 会少算。把曲线的 domain 放宽到包含它，或缩小滑块范围。`);
+    }
+    return out;
   }
   function fgValidate(m){
     fgCache.delete(m);const C=fgGet(m);
@@ -332,6 +347,7 @@
       schema:m=>fgGet(m).schema,
       validate:fgValidate,
       derive:fgDerive,
+      inspect:fgInspect,
       draw(p,m,d,layers,view){
         const C=fgGet(m),a=d[C.param],{xMin:xLo,xMax:xHi,yMin:yLo,yMax:yHi}=view;
         const span=xHi-xLo,clip=segs=>fgOverlap(segs,[[xLo,xHi]]),style=c=>({stroke:c.color,...(c.o.dash?{'stroke-dasharray':'8 6'}:{})});

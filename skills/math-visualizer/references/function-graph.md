@@ -10,7 +10,10 @@
    - `piecewise-monotone.json`：分段函数单调，段内 + 跨段。
    完整例子：`assets/configs/gaokao-2022-q10.json`（极值、零点、对称、切线）、`assets/configs/gaokao-2024-q6.json`（含参分段函数）。
 2. 运行 `node scripts/build_lesson.cjs --check 你的配置.json`。报错是中文，照着提示改，直到通过。
-3. 用 `--preview` 生成预览，再按审校流程正式构建。
+3. 运行 `node scripts/build_lesson.cjs --inspect 你的配置.json`：一次列出每一步在初始值和每个停靠点下的正文、被省略的标签、被挤掉的刻度、图下提示，以及图文一致性提醒（lint）和“domain 之外还有交点”的提醒。**提醒全部处理完再进入审校**，可以少跑审校轮次。只想看图文一致性提醒时用 `--lint`。
+4. 用 `--preview` 生成预览，再运行 `node scripts/screenshot.cjs 预览.html 截图目录`：调用本机 Chrome 或 Edge，按 1366×768 截完每一步和每个停靠点、按 1440×900 截每一步，并用文字报告横向溢出和图下提示。看截图核对标签、遮挡和同屏，然后按审校流程正式构建。
+
+**不要自己另写**核验脚本、截图脚本或检查脚本：数学结论用 `keypoint` 和 `checks` 交给构建器核对；渲染状态用 `--inspect`；截图用 `screenshot.cjs`。
 
 ## model 的写法
 
@@ -41,7 +44,7 @@
 
 | type | 必填字段 | 说明 | 可绑定字段 |
 | --- | --- | --- | --- |
-| `curve` | `expr`（含 x，可含参数）、`domain` | `domain` 是区间列表，如 `[[-3,3]]`；有渐近线时拆开，如 `[[-4,-0.01],[0.01,4]]` | — |
+| `curve` | `expr`（含 x，可含参数）、`domain` | `domain` 是区间列表，如 `[[-3,3]]`；有竖直渐近线时拆开，如 `[[-4,-0.01],[0.01,4]]`；曲线向一侧贴近水平渐近线时（如 x·eˣ 在 x→−∞），这一侧要写宽，如 `[[-60,1.3]]`，否则远处的交点会被漏掉。`domain` 只决定交点搜索范围，画面范围由 `view` 决定 | — |
 | `piecewise` | `pieces`：`[{expr, from, to, left, right}]` | 各段从左到右；`left`/`right` 取 `closed`（实心端点）、`open`（空心端点）、`none`（不画端点，默认）；同一分界点两侧不能都写 `closed` | — |
 | `hline` | `y`（只含参数或常数） | 水平线；写 `"y": "a"` 时可在图上上下拖动 | — |
 | `vline` | `x`（只含参数或常数） | 竖直虚线；写 `"x": "a"` 时可左右拖动 | — |

@@ -45,6 +45,12 @@ if(require.main===module){
     const args=process.argv.slice(2);
     if(args[0]==='--check'&&args.length===2){
       console.log(JSON.stringify(check(args[1]),null,2));
+    }else if(args[0]==='--lint'&&args.length===2){
+      const warnings=require('./lesson_inspect.cjs').lint(load(args[1]).config);
+      console.log(warnings.length?warnings.map(w=>`- ${w.where}：${w.message}`).join('\n')+`\nlint：${warnings.length} 条提醒（不阻止构建；审校前先处理）`:'lint：没有提醒');
+    }else if(args[0]==='--inspect'&&(args.length===2||(args.length===3&&args[2]==='--json'))){
+      const I=require('./lesson_inspect.cjs'),report=I.inspect(load(args[1]).config);
+      console.log(args[2]==='--json'?JSON.stringify(report,null,2):I.formatReport(report));
     }else{
       const preview=args.includes('--preview'),rest=[];
       for(let i=0;i<args.length;i++){
@@ -57,7 +63,7 @@ if(require.main===module){
         if(rest[i]==='--formal-root'){formalRoots.push(rest[++i]);continue;}
         files.push(rest[i]);
       }
-      if(files.length!==2||files.some(a=>a.startsWith('--')))throw new Error('Usage: node scripts/build_lesson.cjs --check lesson.json\n       node scripts/build_lesson.cjs [--preview] [--formal-root <dir>]… lesson.json output.html\n--check 仅预检，不生成页面或发起审校。默认正式构建需通过独立审校；--preview 带未审校标记且拒写正式目录（默认仅 skill 自带 assets/examples；宿主仓库正式目录用 --formal-root 追加，可多次）。');
+      if(files.length!==2||files.some(a=>a.startsWith('--')))throw new Error('Usage: node scripts/build_lesson.cjs --check lesson.json\n       node scripts/build_lesson.cjs --lint lesson.json\n       node scripts/build_lesson.cjs --inspect lesson.json [--json]\n       node scripts/build_lesson.cjs [--preview] [--formal-root <dir>]… lesson.json output.html\n--check 仅预检，不生成页面或发起审校。默认正式构建需通过独立审校；--preview 带未审校标记且拒写正式目录（默认仅 skill 自带 assets/examples；宿主仓库正式目录用 --formal-root 追加，可多次）。');
       build(files[0],files[1],{review:preview?'preview':'require',formalRoots});console.log(files[1]);
     }
   }catch(e){console.error(e.message);process.exitCode=1;}

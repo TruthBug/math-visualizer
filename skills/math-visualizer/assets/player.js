@@ -113,5 +113,16 @@
   $('previous').addEventListener('click',()=>{if(current>0){current--;paint();}});$('next').addEventListener('click',()=>{if(current<steps.length-1){current++;paint();}});
   if(document.addEventListener)document.addEventListener('keydown',e=>{const t=e.target&&e.target.tagName;if(t&&['INPUT','SELECT','TEXTAREA'].includes(t))return;const onSlider=e.target&&e.target.getAttribute&&e.target.getAttribute('role')==='slider';const fwd=e.key==='PageDown'||(!onSlider&&e.key==='ArrowRight'),back=e.key==='PageUp'||(!onSlider&&e.key==='ArrowLeft');if(fwd&&current<steps.length-1){e.preventDefault();current++;paint();}else if(back&&current>0){e.preventDefault();current--;paint();}else if((e.key==='f'||e.key==='F')&&!e.ctrlKey&&!e.metaKey&&!e.altKey){toggleFull();}else if(e.key==='Escape'&&prepPanel&&!prepPanel.hidden){setPrep(false);}});
   $('reset').addEventListener('click',()=>{const i=steps[current].scene;values[i]=config.scenes[i].control.initial;paint();});
-  $('restart').addEventListener('click',()=>{config.scenes.forEach((s,i)=>values[i]=s.control.initial);current=0;paint();});paint();
+  $('restart').addEventListener('click',()=>{config.scenes.forEach((s,i)=>values[i]=s.control.initial);current=0;paint();});
+  /* 网址定位（截图与验收用）：#step=3&v=0.5 打开第 3 步，并把这一步所在场景的参数设为 0.5；无效值忽略，按默认状态打开。 */
+  try{const h=typeof location!=='undefined'&&location.hash?new URLSearchParams(location.hash.slice(1)):null;
+    if(h){const n=Number(h.get('step'));if(Number.isInteger(n)&&n>=1&&n<=steps.length)current=n-1;
+      const i=steps[current].scene,c=config.scenes[i].control,v=Number(h.get('v'));
+      if(h.has('v')&&Number.isFinite(v)&&v>=c.min&&v<=c.max){try{MathModules.derive(config.scenes[i],v);values[i]=v;}catch(err){}}}}catch(err){}
+  paint();
+  /* #audit=1：把布局检查结果写到 body 的 data-mathviz-audit 上，供截图脚本经 --dump-dom 读取（纯文本模型也能拿到结论）。 */
+  try{if(typeof location!=='undefined'&&/(^|[#&])audit=1(&|$)/.test(location.hash||'')&&typeof window!=='undefined'&&document.documentElement&&document.body){
+    const pos=steps[current],de=document.documentElement;
+    document.body.setAttribute('data-mathviz-audit',JSON.stringify({step:current+1,value:values[pos.scene],viewport:`${window.innerWidth}x${window.innerHeight}`,
+      overflowX:de.scrollWidth>window.innerWidth+1,scrollWidth:de.scrollWidth,notice:$('notice').textContent}));}}catch(err){}
 })();

@@ -5,7 +5,7 @@
   "description": "Portable Agent Skill for offline interactive math lessons. No npm dependencies.",
   "engines": { "node": ">=22" },
   "scripts": {
-    "test": "node --test scripts/toolkit.test.cjs scripts/modules.test.cjs scripts/function-graph.test.cjs scripts/teaching-intent.test.cjs scripts/review_session.test.cjs scripts/lesson_pipeline.test.cjs scripts/teaching-review-cli.test.cjs scripts/run_python.test.cjs",
+    "test": "node --test scripts/toolkit.test.cjs scripts/modules.test.cjs scripts/function-graph.test.cjs scripts/inspect.test.cjs scripts/teaching-intent.test.cjs scripts/review_session.test.cjs scripts/lesson_pipeline.test.cjs scripts/teaching-review-cli.test.cjs scripts/run_python.test.cjs",
     "check:package": "node scripts/run_python.cjs scripts/check_package.py",
     "check:environment": "node --version && node scripts/run_python.cjs --version"
   }
