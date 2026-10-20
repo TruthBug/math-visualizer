@@ -29,7 +29,7 @@ document.querySelector('.visual').innerHTML = p.svg();
   - `importance`：`essential`（必要身份：正文/结论引用它）/ `supporting`（默认，辅助）/ `decorative`（普通刻度等装饰信息）。不自动认定所有文字都必要。
   - `labelEvidence`：每次 `label` 调用产生一条 `{id, text, importance, anchor, status, reason}`，`status` 为 `rendered`/`omitted`。这是审校与验收消费的事实依据：断言基于实际输出，不以调用成功推断可见。必要标签放不下时会被记录为 omitted，不会静默丢失、挪动数学对象或缩成小字。
   - `svg()` 输出的 `<metadata data-mathviz-label-evidence="…">` 以转义 JSON 带出同一份证据（非显示元素），供只拿到 SVG 字符串的路径读取；重复调用 `svg()` 不重复追加。metadata 不进学生可见内容。`id`/`importance` 不下传为 SVG 属性。
-  - 不提供全局最优避让：作者可优先绘制必要标识、用候选位置/引线，或改用图例、分步等表达。
+  - 本轮不做全局最优避让：作者可优先绘制必要标识、用候选位置/引线，或改用图例、分步等表达。
 - `svg()`：输出字符串，几何裁切在数学视窗内，标签位于裁切层外。
 
 `style` 使用 SVG 属性名，如 `{stroke:'#b65410','stroke-dasharray':'7 5','stroke-width':3}`。函数绘图不是符号连续性判定器：已知渐近线必须明确拆分，例如 `segments:[[-4,-0.03],[0.03,4]]` 画 `1/x`。不能依靠有限采样找出所有断点、孤立点或极值；孤立点单独画 `point`。`maxJump` 只是额外防护，不能代替定义域分析。
@@ -44,3 +44,5 @@ document.querySelector('.visual').innerHTML = p.svg();
 ## 课堂布局
 
 使用 `main > header + .problem + .stage`；`.stage` 内含 `.visual` 和 `.explanation`，关键式放 `.formula`，提示放 `.note`，按钮放 `nav` 或 `.controls`。默认目标是 1366×768 投屏、单题单步讲解，默认正文字号 20px、关键公式 26px 起——判断依据是"必须共同查看的信息是否在同一视野"：需要同时观察比较的图、式、结论应并置；可以按顺序阅读的内容允许滚动，长内容优先拆步。不得靠缩小字号、删去理由或隐藏正文换取同屏。图内字体需检查 SVG 缩放后的实际大小。移动设备自动改单栏，窄屏另行检查可读性。
+
+在本 Skill 根目录验证：`node --test scripts/toolkit.test.cjs`。项目根目录可运行 `node --test tests/toolkit.test.cjs` 包装入口；测试正文随 Skill 分发。

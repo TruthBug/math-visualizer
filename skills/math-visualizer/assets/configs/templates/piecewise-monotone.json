@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "title": "分段函数在 R 上单调递增的条件",
+  "equation": "f(x) = ax（x＜1）；x<sup>2</sup> + 1（x≥1）",
+  "problem": "已知 f(x)=ax（x＜1），f(x)=x²+1（x≥1）在 R 上单调递增，求 a 的取值范围。",
+  "source": "模板：分段函数单调性（段内 + 跨段）。自编例题，复制后替换为原题。",
+  "teacher": "先查每一段内部，再查跨段：左段在 x=1 左侧的界限 a 不能超过右段起点 f(1)=2。空心点表示该端点不属于左段。",
+  "teaching": {
+    "purpose": "worked-example",
+    "objective": "分段函数单调要同时检查段内单调和分段点两侧的函数值。",
+    "prerequisites": "一次函数、二次函数的单调性；单调递增的定义。",
+    "scope": "完整求出 a 的范围 (0,2]；拖动只用于观察。"
+  },
+  "scenes": [
+    {
+      "module": "function-graph",
+      "model": {
+        "param": "a",
+        "objects": [
+          { "id": "L", "type": "piecewise", "pieces": [{ "expr": "a*x", "from": -2.2, "to": 1, "right": "open" }], "label": "x＜1 的一段", "labelAt": -1.5 },
+          { "id": "R", "type": "piecewise", "pieces": [{ "expr": "x^2+1", "from": 1, "to": 3.2, "left": "closed" }], "label": "x≥1 的一段", "tone": "accent", "labelAt": 1.8 },
+          { "id": "split", "type": "vline", "x": "1" },
+          { "id": "f1", "type": "keypoint", "on": "R", "x": "1", "y": "2", "label": "f(1)=2", "tone": "accent" }
+        ]
+      },
+      "view": { "xMin": -2, "xMax": 3, "yMin": -2, "yMax": 5, "tick": 1, "title": "分段函数在 x=1 附近的图像" },
+      "control": { "label": "参数 a", "min": -1, "max": 3, "step": 0.5, "initial": 1, "stops": [0, 2, 3] },
+      "steps": [
+        {
+          "title": "先看每一段内部",
+          "tab": "段内",
+          "body": "左段 y=ax 递增要求 a>0；右段 y=x²+1 在 [1,+∞) 上递增，对 a 没有限制。当前 a={{a}}。",
+          "formula": "左段递增 ⟺ a>0",
+          "question": "a=0 时左段是什么形状？还算递增吗？",
+          "layers": ["L", "R", "split"],
+          "interactive": true
+        },
+        {
+          "title": "再看分段点两侧",
+          "tab": "跨段",
+          "body": "左段在 x=1 左侧的界限是 a（空心点），右段从 f(1)=2 开始。跨段递增要求 a≤2。当前 a={{a}}。",
+          "formula": "a≤f(1)=2",
+          "question": "把 a 调到 3：在左段找一个函数值大于 f(1) 的点。",
+          "layers": ["L", "R", "split", "f1"],
+          "interactive": true
+        },
+        {
+          "title": "合并条件",
+          "tab": "结论",
+          "body": "段内要求 a>0，跨段要求 a≤2，所以 a∈(0,2]。a=2 时左段的值都严格小于 2，跨段仍是严格递增。",
+          "formula": "a∈(0,2]",
+          "question": "为什么 a=2 可以取到，a=0 却不行？",
+          "layers": ["L", "R", "split", "f1"],
+          "interactive": false
+        }
+      ]
+    }
+  ]
+}

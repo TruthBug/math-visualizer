@@ -24,7 +24,7 @@
  *   --records-dir <dir>         case 目标审校记录目录
  *   --source-label <text>       写入审校包 source 的文案模板（{id} 替换为案例 id；参与内容指纹，必须与既有记录一致）
  *   --verification-label <text> 写入审校包 meta.verification 的文案（同上参与内容指纹）
- *   --source-root <dir>         config 目标 packet.source/scopeRef/packetPath 的相对化基准（缺省为当前工作目录）
+ *   --source-root <dir>         外部 config 的 packet.source 及 scopeRef/packetPath 相对化基准（缺省为当前工作目录）；随包 assets/configs 使用稳定逻辑标识
  *
  * 记录位置（跟随讲稿源，不集中）：
  *   case 目标   → <records-dir>/<case>.review.json（索引）+ <case>.sessions/<taskId>.json（周期详情）
@@ -39,7 +39,7 @@ const PACKET_VERSION = 1;
 const REVIEW_TYPES = ['语言', '推理', '图文', '数学'];
 const FINDING_FIELDS = ['title', 'body', 'formula', 'question', 'figure', 'meta'];
 
-/* ---------- 调用方注入（skill 不引用父仓库，宿主布局由调用方提供） ---------- */
+/* ---------- 调用方注入（P1-4：skill 不引用父仓库，宿主布局由调用方提供） ---------- */
 const CASE_INJECTION = [
   ['--cases-module', 'casesModule'], ['--cases-meta', 'casesMeta'], ['--records-dir', 'recordsDir'],
   ['--source-label', 'sourceLabel'], ['--verification-label', 'verificationLabel'],
@@ -59,7 +59,7 @@ function requireCaseInjection() {
 const relFromSourceRoot = p => path.relative(INJ.sourceRoot, path.resolve(p));
 
 const CHECKLIST = [
-  '中文语序和搭配是否自然，是否符合数学课堂用语；',
+  '按下附数学教材语言规范检查相应学段的术语、句法搭配、对象指代、量词逻辑、符号及推理语体；可定位的语言错误不能因答案正确降为偏好；',
   '主语、指代、条件、符号含义是否明确；',
   '每个关键结论是否有必要理由；',
   '新对象为什么引入，下一步为什么发生；',
@@ -209,6 +209,19 @@ function packScriptCase(caseId) {
 }
 
 /* ---------- 配置 JSON 路径打包 ---------- */
+function configSourceLabel(source) {
+  const bundled = path.join(SKILL, 'assets', 'configs');
+  if (fs.existsSync(bundled)) {
+    // 用实际文件位置判断随包归属，不能仅凭同名文件或路径片段复用内置标识。
+    const relative = path.relative(fs.realpathSync(bundled), fs.realpathSync(source));
+    if (relative && relative !== '..' && !relative.startsWith('..' + path.sep) && !path.isAbsolute(relative)) {
+      // 保留既有 v1/v2 审校包的 source 字节：这是逻辑标识，不用于查找宿主仓库。
+      return 'skills/math-visualizer/assets/configs/' + relative.split(path.sep).join('/');
+    }
+  }
+  // 用户项目配置继续遵守调用方 source-root 契约，不继承同名随包案例的身份。
+  return path.relative(INJ.sourceRoot, source).split(path.sep).join('/');
+}
 function packConfig(configPath) {
   const modules = require(path.join(SKILL, 'assets', 'modules.js'));
   const source = path.resolve(configPath);
@@ -224,11 +237,11 @@ function packConfig(configPath) {
         /* 配置路径的正文/公式是纯文本（播放器以 textContent 呈现），不能按 HTML 剥标签——会把 r<1 等比较式吃掉。 */
         const bodyText = String(out.body).trim(), formulaText = String(out.formula).trim();
         const data = {};
-        for (const k of ['r', 'k', 'count', 'distanceLow', 'distanceHigh', 'nearCount', 'farCount', 'critical']) if (out.data && out.data[k] !== undefined) data[k] = out.data[k];
+        for (const k of (modules.definitions[scene.module].schema ? modules.capabilities(scene).fields : ['r', 'k', 'count', 'distanceLow', 'distanceHigh', 'nearCount', 'farCount', 'critical'])) if (out.data && out.data[k] !== undefined) data[k] = out.data[k];
         const key = branchKey(bodyText, formulaText, figure);
         const same = branches.find(b => b.key === key);
         if (same) same.values.push(v);
-        else branches.push({ key, param: modules.definitions[scene.module].parameter, values: [v], representative: v, bodyText, formulaText, figure, modelData: data, notice: out.notice || '' });
+        else branches.push({ key, param: modules.capabilities(scene).parameter, values: [v], representative: v, bodyText, formulaText, figure, modelData: data, notice: out.notice || '' });
       }
       for (const b of branches) delete b.key;
       return {
@@ -237,17 +250,28 @@ function packConfig(configPath) {
         prevTitle: i ? scene.steps[i - 1].title : null, nextTitle: i + 1 < scene.steps.length ? scene.steps[i + 1].title : null,
       };
     });
+    const dragRejections = [];
+    if (scene.control.type === 'drag') {
+      const cap = modules.capabilities(scene).drag, view = scene.view;
+      for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) {
+        const point = { x: view.xMin + (view.xMax - view.xMin) * x / 4, y: view.yMin + (view.yMax - view.yMin) * y / 4 };
+        if (!Number.isFinite(cap.fromPoint(scene.model, point)))
+          dragRejections.push({ point, explanation: cap.explain ? cap.explain(scene.model, point) : '' });
+      }
+    }
     return {
       module: scene.module, moduleVersion: modules.definitions[scene.module].version,
       model: scene.model, view: scene.view, control: scene.control, sweptValues: values, steps,
+      ...(scene.control.type === 'drag' ? { dragRejections } : {}),
     };
   });
   return {
-    packetVersion: PACKET_VERSION, id: 'config:' + path.basename(source, '.json'), path: 'config-json',
-    source: path.relative(INJ.sourceRoot, source).split(path.sep).join('/'),
+    packetVersion: scenes.some(scene => Object.hasOwn(scene, 'dragRejections')) ? PACKET_VERSION + 1 : PACKET_VERSION,
+    id: 'config:' + path.basename(source, '.json'), path: 'config-json',
+    source: configSourceLabel(source),
     meta: {
       title: config.title, problem: config.problem, teacher: config.teacher, sourceNote: config.source,
-      equation: config.equation || '', teaching: config.teaching || null,
+      equation: config.equation || '', teaching: config.teaching || null, ...(config.prep ? { prep: config.prep } : {}),
       verification: 'modules.js 结构校验 + 边界派生有限值检查（build_lesson.cjs）；教学文字未被程序核验。',
     },
     scenes,
@@ -271,14 +295,19 @@ function briefMarkdown(packet, session, requestId, inputHash) {
   L.push('## 审校要点');
   CHECKLIST.forEach((c, i) => L.push(`${i + 1}. ${c}`));
   L.push('');
+  // 按需读取的写作参考在实际审校请求中完整提供，避免独立上下文漏读判定依据。
+  L.push(fs.readFileSync(path.join(SKILL, 'references', 'math-language.md'), 'utf8').trim());
+  L.push('');
   L.push('## 判定与输出约定');
   L.push('- 问题类型四选一：`语言`（可给替换文本）/ `推理`（需回讲稿补理由）/ `图文`（需改对象、标签或呈现方案）/ `数学`（需重新核验，不能靠改句子处理）。');
-  L.push('- `blocking=true` 仅限：数学错误；必要条件缺失导致结论不成立；关键推理无法由已声明的前置知识推出；指代或符号歧义导致对象混淆；图文与当前参数矛盾。必须给出非空 basis，引用具体内容，说明错误结论或无法推出的环节。');
-  L.push('- 表达偏好、增加例子、解释更细、布局优化均为非阻止建议，默认登记，不要求修改。零阻止项即可交付，不追求零意见。');
+  L.push('- `blocking=true` 包括数学错误、必要条件或推理缺失、对象/图文矛盾，以及上附规范中可定位的语言错误。必须给出非空 basis，引用原句并说明句法、术语、逻辑或已核实的教材依据；不以“答案仍正确”为由放过病句。');
+  L.push('- 准确自然的合格表达之间的偏好、非必要扩写和布局优化为非阻止建议，默认登记。不能仅凭“不像教材”、未经查证的版本印象或禁词表阻止交付。零阻止项即结束，不追求零意见。');
   L.push('- 不要求为了凑数必须提出问题；没有实质问题就 `"verdict":"pass"`。不能用总分或禁词名单代替具体定位。');
   L.push('- 对动态分支：每个分支都是学生实际会看到的状态，逐分支检查；临界值两侧都已给出代表状态。');
   L.push('- 每个分支的 `figure.labelEvidence` 是绘图产物实际放置/省略标签的证据（含被省略项，不是从可见文本反推）。`status=omitted` 且 `importance=essential` 表示一个被标记为必要的身份未被放置：若该对象已有图例、方程标注或文字说明等等价可辨认方式，可以判通过；若正文引用的对象因此在图上无法辨认，必须判阻止。`importance=decorative` 的普通刻度省略不算缺口。证据只说明放置事实，对象选择是否正确仍需你判断。');
   L.push('- 每条发现必须给出：步骤号、字段（title/body/formula/question/figure/meta）、原文或对象、问题类型、具体问题及依据、建议修改、是否阻止导出。');
+  if ((packet.scenes || []).some(scene => Object.hasOwn(scene, 'dragRejections')))
+    L.push('- `scenes[].dragRejections` 记录视窗内 5×5 指针采样的拒绝点位与模块解释，请审查 explanation 的数学语义；空表仅表示这些采样点全通过，不代表穷举所有无定义位置。未声明 explain 时为空文本，页面使用播放器的通用提示。');
   L.push('');
   L.push('## 输出 JSON 格式（写入指定文件，不要输出多余文字）');
   L.push('```json');

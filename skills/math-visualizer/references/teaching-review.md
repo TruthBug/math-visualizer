@@ -14,6 +14,7 @@
   `.packet.json` 保留完整机器证据并用于输入绑定；`.brief.md` 是无损阅读投影：正文和参数分支按步骤列出，完全相同的 `figure` 共用 `figureRef: G编号`，完整图形证据在同一 brief 后部按编号列出。审校员须将每个引用与该分支的文字一起检查；不同编号不能视为相同状态。投影不删标签、诊断或坐标、不舍入数值、不替代浏览器验收。配置打包与构建共用源读取/预检，阅读格式改变不使已通过的输入失效。
 - **两个指纹各管一段**：内容指纹覆盖讲稿、公式、图中标签文本、元素计数、颜色与动态分支；几何指纹在此之上再覆盖包内唯一的坐标载体——`labelEvidence` 的锚点（已有标签对象的实际落点）与标注身份。因此"已标注对象整体平移、标注对象身份翻转、元素增减、颜色改变"会使通过失效并在原周期内复审；模块版本升级但渲染结果不变不算变化。**覆盖边界**：描边宽度等样式细节、不承载任何标签的几何位置（未标注曲线、网格线间距）在包内没有信号，指纹不覆盖它们——这类改动由浏览器截图验收负责，属避免渲染器版本升级触发全面重审的有意取舍。
 - `verify-response --task <id> --response <file>`：校验响应。响应必须**原样回传** brief 给出的 `taskId`、`requestId`、`inputHash`；包发出后源已变化的响应拒收；重复消费同一请求不计数不覆盖。
+- **拖动拒绝探针**：仅 `control.type='drag'` 的配置场景增加 `dragRejections`，在数学视窗内按包含边界的 5×5 网格采样 `fromPoint`，记录非有限映射的 `{point, explanation}`（解释来自可选 `drag.explain`，未声明时为空文本；播放器静态兜底不进入指纹）。该字段保留在 brief 的无损阅读版中，并参与内容及几何指纹；含此字段的包使用 `packetVersion=2`，全通过时为空表。没有 drag 场景的包仍为版本 1，原包与记录不变。采样不保证穷举所有无定义点，未采到的位置仍需实际拖动验收。
 - `fail-review --task <id> --reason <…>`：调用失败、超时或输出不合约记一次失败。同一请求最多 2 次尝试，之后周期记 `incomplete`（预算、历史与原问题保留）。修好真实工具缺陷后重新 `pack` 同一输入，须用 `--tool-fix` 记录具体修复；不得把内容阻止项伪装成工具失败。
 - `gate` / `status`：导出门禁与状态查询。
 
@@ -42,14 +43,15 @@
 
 ## 审校要点
 
-1. 中文语序和搭配是否自然，是否符合数学课堂用语；
+1. 按[数学教材语言与表述规范](math-language.md)检查相应学段的术语、句法搭配、对象指代、量词逻辑、符号及推理语体；独立审校请求会内嵌该规范全文，不能只凭“读起来大致顺畅”判通过；
 2. 主语、指代、条件、符号含义是否明确；
 3. 每个关键结论是否有必要理由；
 4. 新对象为什么引入，下一步为什么发生；
 5. 同一符号是否始终指向同一对象；
 6. 图形、公式、正文和当前参数是否一致；
 7. 是否把教师备注或内部设计说明混入学生正文；
-8. 是否因重复内容或过多关系造成阅读负担。
+8. 是否因重复内容或过多关系造成阅读负担；
+9. 有备课卡（`meta.prep`）时：变式答案与通法是否正确；每个预设错误所说的“暴露状态”是否真的出现在讲稿的某一步；启发提问是否与步骤提问对应、预期回答是否只用到前面已讲的内容。备课卡只给老师看，不按学生可见内容判“提前揭示”。
 
 `labelEvidence` 的读法：`status=omitted` 且 `importance=essential` 是核对信号——该对象已有图例、方程或文字等等价身份方式时可通过，唯一身份丢失必须阻止；`decorative` 普通刻度省略不算缺口。
 
@@ -68,36 +70,39 @@
 
 ## 判定标准
 
-- **阻止项**仅限：数学错误；必要条件缺失导致结论不成立；关键推理无法由已声明的前置知识推出；指代或符号歧义导致对象混淆；图文与当前参数矛盾。每项必须引用具体内容，说明造成的错误或无法推出的环节。仅说"不够清晰""建议补充"不足以阻止交付。
-- **非阻止项默认登记，不自动修改**：表达偏好、更多例子、更细解释和布局优化不进入本轮修订。只处理阻止项及其必要关联修改，不顺手润色。用户另行要求的优化作为后续任务，不以"审校还有意见"为由自动启动。
+- **阻止项**：数学错误；必要条件或关键推理缺失；对象、符号或图文关系矛盾；以及规范中可明确定位的病句、术语/量词/符号用法错误、经核实违反本任务教材约定的表述。语言错误不必先导致答案错误才阻止交付。必须引用原句，说明句法、对象、逻辑或教材依据；仅说“不像教材”“不够清晰”不足以阻止。
+- **非阻止项默认登记，不自动修改**：准确自然的合格表达之间的偏好、非必要例子/解释和布局优化。病句或用语错误不能放进这一类；不能用脱离上下文的禁词表误伤合格课堂用语。只处理阻止项及必要关联修改，不因个人文风要求无限润色。
+
+旧审校记录保留其当时的检查范围，不能因为规则更新就宣称旧课件已按新规范复审。再次交付旧课件时，若旧记录未覆盖本规范，按本次交付目标显式新建审校周期，在 `--scope-file` 中写明旧记录路径/周期 ID 及本次按新规范复审的目标，由独立上下文重新检查；旧周期尚未通过时，另按已有协议用 `--previous` 承接未解决项。不得改写历史通过记录。此要求属于审校执行责任，现有脚本门禁核验输入和周期状态，不会自动识别历史记录采用的语言标准。
 
 ## 审校记录与正式导出门禁
 
 - 记录跟随讲稿源：case（脚本讲稿）路径在调用方注入的记录目录（`--records-dir`），配置路径在 `<配置目录>/reviews/`；每目标一个索引文件（`*.review.json`）指向当前周期，周期详情按 taskId 分文件存放。历史 v1 记录原样嵌入索引的 `legacy` 字段，可继续核验旧输入/旧产物，不自动折算成新周期；旧记录的历史通过与新周期的通过分开报告。
 - 记录绑定**输入版本**：审校内容指纹（讲稿、图文对象描述、动态分支；不含渲染器版本与诊断复述字段）+ 模型与调用方式。输入改变后记录失效，在原周期内复审。
-- **调用方提供路径**：case 目标的讲稿模块、案例元数据、记录目录与包内 `source`/`verification` 文案都由调用方注入（`--cases-module/--cases-meta/--records-dir/--source-label/--verification-label`），缺失即报错退出，不猜测路径；config 目标可用 `--source-root` 固定包内相对路径基准（缺省为当前工作目录）。注入的文案参与内容指纹，必须与既有记录逐字节一致。宿主仓库用薄包装脚本固定这些值并把案例清单展开为 `--case`；包装脚本的具体位置由宿主仓库自己声明。
+- **Skill 不内置宿主仓库路径（P1-4）**：case 目标的讲稿模块、案例元数据、记录目录与包内 `source`/`verification` 文案都由调用方注入（`--cases-module/--cases-meta/--records-dir/--source-label/--verification-label`），缺失即报错退出，不猜测路径；config 目标可用 `--source-root` 固定包内相对路径基准（缺省为当前工作目录）。注入的文案参与内容指纹，必须与既有记录逐字节一致。宿主仓库用薄包装脚本固定这些值并把案例清单展开为 `--case`；包装脚本的具体位置由宿主仓库自己声明（本仓库见根 README）。
 - 正式导出前两条路径都查门禁：记录存在、周期状态为通过、且对应当前输入——不只检查报告文件存在。
   - case（脚本讲稿）路径：宿主仓库的构建脚本在构建每个 interactive 案例前，经仓库侧包装脚本过 `gate --case <题号>`；被拦截的案例不重建，已有正式 HTML 保持不变，脚本以非零码结束。
   - 配置路径：`scripts/build_lesson.cjs` 默认即为正式模式并过门禁（公开 API 同此默认）；`--preview` 生成带醒目"未审校预览"标记的开发预览，且不得写入正式交付目录（默认保护 skill 自带的 `assets/examples/`，宿主仓库的正式目录用 `--formal-root <dir>` 追加，可多次）。没有默认绕过审校的正式发布入口。
 - 生成器只做格式化和动态绑定，审校后不得在生成阶段改写文案。
-- 门禁命令（skill 直连）：`node scripts/teaching_review.cjs gate --case <id>… --config <file.json>…`；`status` 查看各记录与当前输入的对应关系（case 部分需注入参数）。
+- 门禁命令（skill 直连）：`node scripts/teaching_review.cjs gate --case <id>… --config <file.json>…`；`status` 查看各记录与当前输入的对应关系（case 部分需注入参数）；机械行为回归测试见 `tests/chinese-expression-review/test_review_gate.py` 与 `scripts/review_session.test.cjs`。
 
 ## 可运行示例（以某配置为例）
 
-```bash
-# 0. 完成针对本题的数学核验；以下命令从发布仓库根目录运行
+从当前安装的 Skill 根目录执行；`path/lesson.json`、`scope.md` 和响应文件代表用户工作文件的路径，实际路径含空格时用引号包裹。也可在用户工作目录用脚本绝对路径调用，整个审校及构建周期保持同一工作目录。
+
+```text
+# 0. 数学核验：由宿主仓库的基线提供（本 Skill 不携带核验脚本）
 # 1. 任务开始：创建周期（scope 文件写明本次目标与验收范围）
-node skills/math-visualizer/scripts/teaching_review.cjs begin --config path/lesson.json --task circle-distance-lesson --scope-file scope.md
+node scripts/teaching_review.cjs begin --config path/lesson.json --task 2026-09-圆圈distance --scope-file scope.md
 # 2. 讲稿定稿后打包审校输入
-node skills/math-visualizer/scripts/teaching_review.cjs pack --config path/lesson.json --task circle-distance-lesson
+node scripts/teaching_review.cjs pack --config path/lesson.json --task 2026-09-圆圈distance
 # 3. 把生成的 .brief.md 交给独立上下文的 LLM 审校员，
 #    让其按 brief 中的 JSON 结构写出响应文件（含回传 taskId/requestId/inputHash）
 # 4. 校验响应并写入周期
-node skills/math-visualizer/scripts/teaching_review.cjs verify-response --config path/lesson.json \
-  --task circle-distance-lesson --response response.json --model "<模型>" --method "<调用方式>"
+node scripts/teaching_review.cjs verify-response --config path/lesson.json --task 2026-09-圆圈distance --response response.json --model "<模型>" --method "<调用方式>"
 # 5. 有阻止项 → 只修阻止项及必要关联内容，回到第 2 步进行定向复审（最多 3 次）；
 #    非阻止项 → 默认登记；零阻止项即结束，不追加确认
 # 6. 门禁通过后正式生成
-node skills/math-visualizer/scripts/build_lesson.cjs path/lesson.json output/page.html
+node scripts/build_lesson.cjs path/lesson.json output/page.html
 # 7. 浏览器验收（独立于审校，不可互替）
 ```

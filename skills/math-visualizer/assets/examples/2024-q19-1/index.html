@@ -1,0 +1,715 @@
+<!doctype html><html lang='zh-CN'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>2024 · 等差数列的下标分组</title><style>
+/* 课堂讲解共享样式 · v2「课堂白板」
+   设计意图：给投影屏和教室后排看的数学课件，不是网页杂志。
+   - 整屏铺满（100dvh），图形尽量大；字号随屏宽缩放，老师可再用 A−/A+ 调整（--fs）。
+   - 中文界面，不用装饰性英文标签；楷体只用于"老师的提问"，对应教科书里的旁注习惯。
+   - 颜色克制：界面只有墨色、灰阶和一种黑板绿；图里的蓝/橙/绿保留给数学对象。
+   兼容：保留旧版全部类名与 id 钩子（header .intro .stage .visual .explanation .formula .note
+   .parameter-bar .range-wrap .stops footer .steps .navigation .cards .number table 等），
+   手写页、脚本壳页与配置页共用本文件。 */
+:root {
+  color-scheme: light;
+  --bg: #e9ecea;
+  --surface: #ffffff;
+  --sunk: #f4f6f5;
+  --ink: #17212b;
+  --body: #26323d;
+  --muted: #5c6873;
+  --rule: #d5dbd8;
+  --board: #1f4a3d;
+  --board-ink: #f3f1e7;
+  --board-dim: #a9bfb6;
+  --ask: #8a3b12;
+  --blue: #2b56c6;
+  --orange: #c2410c;
+  --green: #0f6256;
+  --primary: var(--blue); --compare: var(--orange); --relation: var(--green);
+  --sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", system-ui, sans-serif;
+  --kai: "KaiTi", "STKaiti", "Kaiti SC", "楷体", "AR PL UKai CN", serif;
+  --math: "Cambria Math", "STIX Two Math", "Times New Roman", "Songti SC", "SimSun", serif;
+  --fs: 1;
+  font-size: calc(var(--fs) * clamp(16px, 0.55vw + 10px, 23px));
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); }
+
+/* ---------- 整屏骨架 ---------- */
+main {
+  min-height: 100vh; min-height: 100dvh;
+  height: 100vh; height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(22rem, 0.9fr);
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "head  head"
+    "notes notes"
+    "intro intro"
+    "task  task"
+    "fig   text"
+    "ctrl  text"
+    "foot  foot";
+  background: var(--surface);
+}
+main > header { grid-area: head; }
+main > #notes { grid-area: notes; }
+main > .intro { grid-area: intro; }
+main > .task { grid-area: task; }
+.stage:not(.without-visual) { display: contents; }
+.stage:not(.without-visual) > .visual { grid-area: fig; }
+.stage:not(.without-visual) > .explanation { grid-area: text; }
+main > .parameter-bar { grid-area: ctrl; }
+main > footer { grid-area: foot; }
+.stage.without-visual { grid-column: 1 / -1; grid-row: 5 / 7; }
+
+/* ---------- 控件 ---------- */
+button, input, select { font: inherit; }
+button {
+  color: var(--ink); background: var(--surface); cursor: pointer;
+  border: 1px solid var(--rule); border-radius: 6px;
+  min-height: 2.2rem; padding: .3rem .9rem;
+  font-size: .82rem; font-weight: 600; line-height: 1.2;
+}
+button:hover:not(:disabled) { border-color: var(--ink); }
+button:focus-visible, input:focus-visible, [role="slider"]:focus-visible, a:focus-visible {
+  outline: 3px solid #3f7cf0; outline-offset: 2px;
+}
+button:disabled { opacity: .35; cursor: default; }
+button.primary {
+  background: var(--board); border-color: var(--board); color: var(--board-ink);
+  min-width: 7.5rem; font-size: .92rem;
+}
+button.primary:hover:not(:disabled) { background: #163a30; border-color: #163a30; }
+button.quiet { background: transparent; border-color: transparent; color: var(--muted); }
+button.quiet:hover:not(:disabled) { color: var(--ink); border-color: var(--rule); }
+input[type="range"] { accent-color: var(--orange); cursor: pointer; margin: 0; height: 1.6rem; }
+a { color: var(--blue); }
+
+/* ---------- 顶栏：只放身份与工具 ---------- */
+header {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: .45rem 1.4rem; min-height: 2.9rem;
+  border-bottom: 1px solid var(--rule); background: var(--surface);
+  font-size: .8rem; color: var(--muted);
+}
+.identity { display: flex; align-items: center; gap: .55rem; min-width: 0; }
+.mark {
+  width: 1.5rem; height: 1.5rem; flex: none; border-radius: 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--board); color: var(--board-ink); font-size: 0;
+}
+.mark::after { content: "数"; font: 700 .78rem/1 var(--sans); }
+.edition {
+  padding: .1rem .55rem; border-radius: 999px;
+  background: var(--sunk); color: var(--body); font-weight: 600; white-space: nowrap;
+}
+.edition:empty { display: none; }
+.tools { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; justify-content: flex-end; }
+header button { min-height: 2rem; padding: .2rem .75rem; font-size: .76rem; }
+header button[aria-expanded="true"], header button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.zoom { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.zoom button { border: 0; border-radius: 0; min-width: 2.2rem; padding: .2rem .45rem; }
+.zoom button + button { border-left: 1px solid var(--rule); }
+
+#notes {
+  margin: 0; padding: .9rem 1.6rem; background: var(--sunk); border-bottom: 1px solid var(--rule);
+  font-size: .86rem; line-height: 1.7; color: var(--body);
+}
+#notes p { margin: .25rem 0; max-width: 60rem; }
+.teaching-summary { margin: .5rem 0; padding: .55rem .9rem; background: var(--surface); border-radius: 8px; }
+.teaching-summary p { margin: .15rem 0; }
+#purpose { font-weight: 700; color: var(--board); }
+summary { cursor: pointer; font-weight: 600; }
+
+/* ---------- 题头：课题 + 核心关系 ---------- */
+.intro {
+  display: flex; align-items: center; justify-content: space-between; gap: .6rem 2rem; flex-wrap: wrap;
+  padding: .85rem 1.6rem .7rem; background: var(--surface);
+}
+.intro > div:first-child { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap; min-width: 0; }
+.eyebrow {
+  margin: 0; flex: none;
+  padding: .12rem .6rem; border-radius: 999px;
+  background: #e3ece8; color: var(--board);
+  font-size: .74rem; font-weight: 700;
+}
+.eyebrow:empty { display: none; }
+h1 { margin: 0; font-size: 1.42rem; line-height: 1.3; font-weight: 750; letter-spacing: .01em; color: var(--ink); }
+.equation {
+  font-family: var(--math); font-size: 1.25rem; font-style: italic; font-weight: 500;
+  color: var(--ink); white-space: nowrap; line-height: 1.2;
+  padding: .3rem .9rem; border-radius: 8px; background: var(--sunk);
+}
+.equation:empty { display: none; }
+.equation sup, .equation sub { font-size: .62em; }
+.orange, .equation .orange { color: var(--orange); }
+
+/* ---------- 题目条：本课任务常驻，学生始终看得到 ---------- */
+.task {
+  display: flex; gap: .9rem; align-items: flex-start;
+  margin: 0 1.6rem .5rem; padding: .55rem .9rem;
+  border-radius: 8px; background: var(--sunk);
+  font-size: .86rem; line-height: 1.6; color: var(--body);
+}
+.task > b {
+  flex: none; padding: .05rem .5rem; border-radius: 4px;
+  background: var(--ink); color: #fff; font-size: .74rem; font-weight: 700; line-height: 1.7;
+}
+.task > span { min-width: 0; }
+
+/* ---------- 图形区：尽量大 ---------- */
+.visual {
+  min-width: 0; min-height: 0; position: relative;
+  display: flex; flex-direction: column;
+  margin: .3rem 0 0 1.6rem;
+  border: 1px solid var(--rule); border-radius: 10px 10px 0 0; border-bottom: 0;
+  background: #fcfbf8; overflow: hidden;
+}
+.visual > #visual, .visual > #drawing, .visual > svg {
+  flex: 1 1 0; min-height: 0; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  padding: .4rem;
+}
+.visual svg { display: block; width: 100%; height: 100%; }
+#visual[role="slider"] { touch-action: none; }
+#visual.drag-y { cursor: ns-resize; }
+#visual.drag-x { cursor: ew-resize; }
+#visual.draggable[data-drag-hint]::after {
+  content: attr(data-drag-hint);
+  position: absolute; top: .7rem; right: .8rem; pointer-events: none;
+  padding: .2rem .6rem; border-radius: 999px;
+  background: var(--ink); color: #fff; font-size: .72rem; font-weight: 600;
+}
+#notice:not(:empty), #caption:not(:empty) {
+  margin: 0; padding: .4rem 1rem;
+  font-size: .74rem; line-height: 1.5; color: var(--muted);
+  border-top: 1px dashed var(--rule);
+}
+#notice:empty, #caption:empty { display: none; }
+.visual > p:not(#notice):not(#caption) { margin: 0; padding: .4rem 1rem; font-size: .74rem; line-height: 1.5; color: var(--muted); border-top: 1px dashed var(--rule); }
+.panel-controls {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem;
+  padding: .55rem 1rem; border-top: 1px solid var(--rule); background: var(--sunk);
+}
+.panel-controls label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .6rem; font-size: .82rem; font-weight: 600; }
+.panel-controls input[type="range"] { min-width: 9rem; }
+
+/* 图下参数条：与图形同一块面板 */
+.parameter-bar {
+  margin: 0 0 0 1.6rem; padding: .55rem 1rem;
+  border: 1px solid var(--rule); border-top: 1px solid var(--rule); border-radius: 0 0 10px 10px;
+  background: var(--sunk);
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem;
+}
+main:has(.parameter-bar[hidden]) .visual,
+main:not(:has(.parameter-bar)) .visual { border-bottom: 1px solid var(--rule); border-radius: 10px; margin-bottom: .6rem; }
+.parameter-bar > .quiet { order: 99; margin-left: auto; font-size: .74rem; }
+.parameter { flex: 1; min-width: 15rem; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+.parameter-heading { display: flex; align-items: center; gap: .5rem; }
+.parameter-heading > span, .parameter-heading label { font-size: .82rem; font-weight: 700; }
+output {
+  font: 700 .95rem/1.3 var(--math); font-variant-numeric: tabular-nums; white-space: nowrap;
+  padding: .05rem .55rem; border-radius: 5px; background: var(--ink); color: #fff;
+}
+.range-wrap { flex: 1; min-width: 9rem; }
+.range-wrap input[type="range"] { width: 100%; }
+.range-labels { display: flex; justify-content: space-between; gap: .5rem; font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stops { display: flex; flex-wrap: wrap; gap: .35rem; }
+.stops button { min-height: 1.9rem; padding: .15rem .6rem; font: 600 .78rem/1.2 var(--math); font-variant-numeric: tabular-nums; }
+.stops button span { font-size: .7rem; color: var(--muted); }
+.stops button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.stops button[aria-pressed="true"] span { color: #d7dde2; }
+
+/* ---------- 讲解区 ---------- */
+.explanation {
+  min-width: 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column;
+  padding: .5rem 1.6rem 1rem 1.6rem;
+  font-size: 1rem; line-height: 1.75; color: var(--body);
+}
+.explanation h2 {
+  margin: .2rem 0 .7rem; font-size: 1.3rem; line-height: 1.4; font-weight: 750; color: var(--ink);
+}
+.explanation p { margin: 0 0 .7rem; }
+.explanation > #body, .explanation > #explanation { max-width: 34em; }
+.formula {
+  margin: .3rem 0 .9rem; padding: .6rem .95rem;
+  border-radius: 8px; background: var(--sunk);
+  font: 500 1.08rem/1.65 var(--math); color: var(--ink);
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+.formula:empty { display: none; }
+.note { font-size: .82rem; line-height: 1.6; color: var(--muted); }
+/* 老师的提问：楷体 + "问"字标，像教科书的旁注 */
+#question:not(:empty), .explanation > .note:last-of-type:not(:empty) {
+  margin: .6rem 0 0; padding: .7rem .95rem .7rem 3.1rem; position: relative;
+  border-radius: 8px; background: #fbf3ec;
+  font-family: var(--kai); font-size: 1.08rem; line-height: 1.6; color: #3d2414;
+}
+#question:not(:empty)::before, .explanation > .note:last-of-type:not(:empty)::before {
+  content: "问"; position: absolute; left: .8rem; top: .72rem;
+  width: 1.55rem; height: 1.55rem; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ask); color: #fff; font: 700 .78rem/1 var(--sans);
+}
+.source { font-size: .76rem; color: var(--muted); overflow-wrap: anywhere; }
+.source a { color: inherit; }
+
+/* 不画图的题：一张居中的解答页 */
+.stage.without-visual { padding: 1rem 1.6rem 1.4rem; display: flex; justify-content: center; align-items: flex-start; }
+.without-visual .explanation, .stage > .explanation:only-child {
+  width: 100%; max-width: 46rem; padding: 1.4rem 1.8rem;
+  border: 1px solid var(--rule); border-radius: 12px; background: var(--surface);
+  font-size: 1.08rem;
+}
+.without-visual #question:not(:empty), .without-visual .explanation > .note:last-of-type:not(:empty) { margin-top: 1rem; }
+
+/* ---------- 底栏：黑板槽 ---------- */
+footer {
+  display: flex; align-items: stretch; justify-content: space-between; gap: 0;
+  margin-top: .6rem; background: var(--board); color: var(--board-ink);
+  min-height: 3.6rem;
+}
+.steps { display: flex; align-items: stretch; flex-wrap: wrap; padding-left: .8rem; counter-reset: none; }
+.steps button {
+  position: relative; border: 0; border-radius: 0; background: transparent;
+  color: var(--board-dim); min-height: 3.6rem; padding: 0 .85rem;
+  display: inline-flex; align-items: center; gap: .4rem;
+  font: 600 .74rem/1 var(--sans); font-variant-numeric: tabular-nums;
+}
+.steps button span { font-size: .84rem; font-weight: 600; }
+.steps button:hover:not(:disabled) { color: var(--board-ink); }
+.steps button::after {
+  content: ""; position: absolute; left: .85rem; right: .85rem; bottom: .55rem; height: 3px; border-radius: 2px;
+  background: transparent;
+}
+.steps button[aria-current="step"] { color: #fff; }
+.steps button[aria-current="step"]::after { background: #f2c94c; }
+.navigation { display: flex; align-items: center; gap: .5rem; padding: .5rem 1.2rem; margin-left: auto; }
+.counter { color: var(--board-dim); font-size: .8rem; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; padding: 0 .3rem; }
+.navigation button { border-color: rgba(243, 241, 231, .3); background: transparent; color: var(--board-ink); }
+.navigation button:hover:not(:disabled) { border-color: var(--board-ink); }
+.navigation button.quiet { border-color: transparent; color: var(--board-dim); }
+.navigation button.primary { background: var(--board-ink); color: var(--board); border-color: var(--board-ink); }
+.navigation button.primary:hover:not(:disabled) { background: #fff; color: var(--board); }
+
+/* ---------- 离散对象：卡片与表格 ---------- */
+.cards { display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: .9rem; padding: 1.6rem 1rem; flex: 1; }
+.number {
+  min-width: 4.4rem; padding: .9rem .8rem; text-align: center;
+  border: 2px solid var(--ink); border-radius: 10px; background: var(--surface);
+  font: 700 1.9rem/1.1 var(--math); font-variant-numeric: tabular-nums;
+}
+.number small { display: block; margin-top: .3rem; font: 500 .74rem/1.2 var(--sans); color: var(--muted); }
+.removed { color: var(--muted); border-color: #aab3b0; border-style: dashed; text-decoration: line-through; background: var(--sunk); }
+.selected { background: var(--ink); color: #fff; }
+.selected small { color: #d7dde2; }
+table { border-collapse: collapse; width: 100%; margin: .6rem 0; background: var(--surface); font-size: .9rem; }
+th, td { padding: .5rem .75rem; border: 1px solid var(--rule); text-align: center; font-variant-numeric: tabular-nums; }
+th { background: var(--sunk); font-weight: 700; }
+caption { padding-bottom: .4rem; text-align: left; font-weight: 700; color: var(--ink); }
+
+/* ---------- 备课卡（只给老师看，课堂投影时收起） ---------- */
+.prep {
+  position: fixed; inset: 0 0 0 auto; z-index: 20; width: min(36rem, 100vw);
+  overflow: auto; padding: 1.2rem 1.5rem 2rem;
+  background: var(--surface); border-left: 1px solid var(--rule);
+  box-shadow: -18px 0 40px -20px rgba(23, 33, 43, .35);
+  font-size: .86rem; line-height: 1.7; color: var(--body);
+}
+.prep-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .6rem; }
+.prep-head h2 { margin: 0; font-size: 1.1rem; color: var(--ink); }
+.prep-head div { display: flex; gap: .4rem; flex: none; }
+.prep-head button { white-space: nowrap; }
+.prep section { padding: .7rem 0; border-top: 1px solid var(--rule); }
+.prep h3 { margin: 0 0 .35rem; font-size: .86rem; color: var(--board); }
+.prep p { margin: .2rem 0; }
+.prep dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: .2rem .9rem; }
+.prep dt { color: var(--muted); }
+.prep dd { margin: 0; }
+.prep ol, .prep ul { margin: .2rem 0; padding-left: 1.3rem; }
+.prep li { margin: .3rem 0; }
+.prep .expect { display: block; color: var(--muted); font-family: var(--kai); font-size: 1.02em; }
+.prep .prep-empty { color: var(--muted); }
+
+/* 打印用的学案/备课卡（屏幕上不显示） */
+.print-only { display: none; }
+
+/* ---------- 窄屏 ---------- */
+@media (max-width: 960px) {
+  main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: "head" "notes" "intro" "task" "fig" "ctrl" "text" "foot";
+    height: auto;
+  }
+  .visual > #visual, .visual > #drawing, .visual > svg { flex: none; }
+  .explanation { overflow: visible; }
+  .stage.without-visual { grid-area: fig; grid-row: auto; grid-column: auto; }
+  .visual, .parameter-bar { margin-left: 1rem; margin-right: 1rem; }
+  .visual svg { height: auto; max-height: none; }
+  .explanation { padding: 1rem; }
+  .intro, header, #notes { padding-left: 1rem; padding-right: 1rem; }
+  .task { margin-left: 1rem; margin-right: 1rem; }
+  #question:not(:empty), .explanation > .note:last-of-type:not(:empty) { margin-top: .6rem; }
+  footer { flex-direction: column; position: sticky; bottom: 0; z-index: 5; }
+  .steps { overflow-x: auto; flex-wrap: nowrap; padding-left: .4rem; }
+  .steps button { min-height: 2.8rem; flex: none; }
+  .steps button::after { bottom: .3rem; }
+  .navigation { width: 100%; justify-content: flex-end; padding: .4rem 1rem .6rem; }
+  .tools .zoom, #fullscreen { display: none; }
+}
+@media (max-width: 520px) {
+  header { flex-wrap: wrap; }
+  .identity > span:nth-child(2) { display: none; }
+  .navigation #restart, .navigation .counter { display: none; }
+}
+
+/* 投影全屏：去掉顶栏工具外的杂项 */
+:fullscreen main, main.presenting { min-height: 100vh; }
+main.presenting > header .identity > span:nth-child(2) { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- 打印：学案或备课卡（A4） ---------- */
+@media print {
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  :root { --fs: 1; font-size: 11pt; background: #fff; }
+  body { background: #fff; }
+  main { display: block; min-height: 0; }
+  main > *:not(.print-only) { display: none !important; }
+  body.print-handout .print-handout, body.print-prep .print-prep { display: block !important; }
+  .prep { position: static; width: auto; box-shadow: none; border: 0; padding: 0; overflow: visible; }
+  .prep-head div { display: none; }
+  .print-sheet h1 { font-size: 16pt; margin: 0 0 4pt; }
+  .print-sheet .sub { color: #555; margin: 0 0 10pt; font-size: 10pt; }
+  .print-sheet .problem { padding: 6pt 8pt; border: 1px solid #999; border-radius: 4pt; margin-bottom: 10pt; line-height: 1.7; }
+  .print-sheet ol { padding-left: 16pt; }
+  .print-sheet li { margin: 0 0 8pt; break-inside: avoid; }
+  .print-sheet li b { display: block; }
+  .print-sheet .ask { font-family: var(--kai); }
+  .print-sheet .blank { height: 34pt; border-bottom: 1px dashed #aaa; margin-top: 4pt; }
+  .print-sheet .figure { break-inside: avoid; text-align: center; margin: 6pt 0 12pt; }
+  .print-sheet .figure svg { width: 70%; height: auto; }
+}
+
+/* ---------- 矮屏（1366×768、1440×900 投影常见分辨率）收紧纵向空间 ---------- */
+@media (min-width: 961px) and (max-height: 820px) {
+  .intro { padding-top: .55rem; padding-bottom: .45rem; }
+  h1 { font-size: 1.25rem; }
+  .task { margin-bottom: .35rem; padding: .4rem .8rem; }
+  .explanation { line-height: 1.65; }
+  .explanation h2 { font-size: 1.18rem; margin-bottom: .5rem; }
+  footer { min-height: 3.1rem; }
+  .steps button { min-height: 3.1rem; }
+  .steps button::after { bottom: .4rem; }
+}
+
+</style><link rel='icon' href='data:,'><main><header><div class='identity'><span class='mark' aria-hidden='true'>∩</span><span>数学 · 交互讲解</span><span class='edition'>2024 · 第 19(1) 题</span></div><button id='notes-toggle' aria-expanded='false' aria-controls='notes'>题目与备课提示</button></header><section id='notes' hidden><p><strong>原题</strong>：公差不为0的等差数列有4m+2项，删去ai、aj后，剩下4m项能分为m组、每组四项成等差，称(i,j)-可分。仅研究第(1)问：m=1，列出1≤i&lt;j≤6的所有可分(i,j)。</p><p class='source'><a href='https://raw.githubusercontent.com/deekur/gaokaomath/d5f0d0f66daa92051586b0850ecb1f3c0b14603f/%E6%99%AE%E9%80%9A%E9%AB%98%E8%80%83/2024/2024%E6%96%B0%E9%AB%98%E8%80%831%28%E5%B1%B1%E4%B8%9C%2C%E5%B9%BF%E4%B8%9C%2C%E6%B9%96%E5%8D%97%2C%E6%B9%96%E5%8C%97%2C%E6%B2%B3%E5%8C%97%2C%E6%B1%9F%E8%8B%8F%2C%E7%A6%8F%E5%BB%BA%2C%E6%B5%99%E6%B1%9F%2C%E6%B2%B3%E5%8D%97%2C%E6%B1%9F%E8%A5%BF%2C%E5%AE%89%E5%BE%BD%29.pdf'>来源：deekur/gaokaomath，2024，第 19(1) 题，PDF第2页。交互与解答为本次改编。</a></p></section><div class='intro'><div><p class='eyebrow'>数学观察与交互推演</p><h1>等差数列的下标分组</h1></div></div><div class='stage'><section class='visual' id='visual'></section><section class='explanation'><h2 id='step-title'></h2><div id='explanation'></div><p class='note' id='question'></p></section></div><section class='parameter-bar' id='controls' hidden><button id='reset' class='quiet'>恢复参数</button></section><footer><nav class='steps' id='steps' aria-label='讲解步骤'></nav><div class='navigation'><span id='counter' class='counter'></span><button id='restart' class='quiet'>重新讲解</button><button id='previous' aria-label='上一步'>←</button><button id='next' class='primary'>下一步 →</button></div></footer></main><script>
+/* MathViz: dependency-free SVG geometry. All angles/data remain mathematical. */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.MathViz = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const finite = p => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite);
+  const attrs = a => Object.entries(a || {}).map(([k,v]) => ` ${k}="${esc(v)}"`).join('');
+  const vector = {
+    dot(a,b) { if(a.length!==b.length) throw new Error('Vector dimensions differ'); return a.reduce((s,x,i)=>s+x*b[i],0); },
+    cross(a,b) { if(a.length!==3 || b.length!==3) throw new Error('cross requires 3D vectors'); return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]; },
+    norm(a) { return Math.hypot(...a); }
+  };
+  function project3(p, {azimuth=Math.PI/4, elevation=Math.PI/6}={}) {
+    if(p.length!==3 || !p.every(Number.isFinite)) throw new Error('Expected a finite 3D point');
+    const [x,y,z]=p, c=Math.cos(azimuth), s=Math.sin(azimuth), ce=Math.cos(elevation), se=Math.sin(elevation);
+    return [c*x-s*y, -se*(s*x+c*y)+ce*z];
+  }
+  function fraction(n,d=1) {
+    if(!Number.isSafeInteger(n)||!Number.isSafeInteger(d)||d===0) throw new Error('fraction requires safe integer numerator and nonzero denominator');
+    if(d<0) {n=-n;d=-d;}
+    let a=Math.abs(n), b=d;
+    while(b) [a,b]=[b,a%b];
+    n/=a; d/=a;
+    return {n,d,text:d===1?String(n):`${n}/${d}`,value:n/d};
+  }
+  function approximate(value,digits=3) {
+    if(!Number.isFinite(value)) return '未定义';
+    if(!Number.isInteger(digits)||digits<0||digits>15) throw new Error('digits must be 0..15');
+    return `≈ ${Number(value.toFixed(digits))}`;
+  }
+  let counter=0;
+  function createPlot({width=680,height=470,xMin=-5,xMax=5,yMin=-3,yMax=4,padding=38,title='数学图示'}={}) {
+    if(![width,height,xMin,xMax,yMin,yMax,padding].every(Number.isFinite)||width<=2*padding||height<=2*padding||padding<0||xMax<=xMin||yMax<=yMin) throw new Error('Invalid plot bounds');
+    const scale=Math.min((width-2*padding)/(xMax-xMin),(height-2*padding)/(yMax-yMin));
+    const left=(width-scale*(xMax-xMin))/2, top=(height-scale*(yMax-yMin))/2;
+    const right=width-left, bottom=height-top, id=`mv-${++counter}`;
+    const items=[], labelItems=[], occupied=[], collisions=[], labelEvidence=[];
+    const IMPORTANCE=new Set(['essential','supporting','decorative']);
+    const map=p=>[left+(p[0]-xMin)*scale,bottom-(p[1]-yMin)*scale];
+    const inside=p=>finite(p)&&p[0]>=xMin&&p[0]<=xMax&&p[1]>=yMin&&p[1]<=yMax;
+    function add(tag,a,content='') {items.push(`<${tag}${attrs(a)}>${content}</${tag}>`); return api;}
+    function line(a,b,style={}) {if(!finite(a)||!finite(b)) throw new Error('Invalid point');const p=map(a),q=map(b);return add('line',{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:'#315eca','stroke-width':3,'stroke-linecap':'round',...style});}
+    /* id 是绘图状态内稳定唯一的对象标识（不得以标签文本充当）；importance 区分必要/辅助/装饰信息。
+       两者只进入 labelEvidence 诊断，不下传为 SVG 属性。 */
+    function label(p,text,{fontSize=22,dx=12,dy=-12,fixed=false,id=null,importance='supporting',...style}={}) {
+      if(!finite(p)) throw new Error('Invalid label point');
+      if(!IMPORTANCE.has(importance)) throw new Error('importance must be essential, supporting or decorative');
+      if(id!==null&&(typeof id!=='string'||!id.trim())) throw new Error('label id must be a non-empty string');
+      if(id!==null&&labelEvidence.some(e=>e.id===id)) throw new Error(`duplicate label id: ${id}`);
+      // U+2212 is wider than an ASCII hyphen but narrower than a CJK glyph; keep a conservative estimate.
+      const [px,py]=map(p), w=Math.min(width-8,Array.from(String(text)).reduce((s,c)=>s+(c==='−'?0.8:/[\u0000-\u00ff]/.test(c)?0.58:1)*fontSize,0)+6),h=fontSize+6;
+      const overlap=r=>occupied.some(o=>r.x<o.x+o.w&&r.x+r.w>o.x&&r.y<o.y+o.h&&r.y+r.h>o.y);
+      let rect, resolved=false;
+      const candidates=fixed?[[dx,dy-h]]:[[dx,dy-h],[dx,8],[-w-12,dy-h],[-w-12,8],[dx,-2*h-16],[-w/2,2*h]];
+      for(const [ox,oy] of candidates) {
+        rect={x:Math.max(4,Math.min(width-w-4,px+ox)),y:Math.max(4,Math.min(height-h-4,py+oy)),w,h};
+        if(!overlap(rect)){resolved=true;break;}
+      }
+      if(!resolved) { const reason='No collision-free label position; label omitted'; collisions.push({point:p.slice(),text:String(text),reason}); labelEvidence.push({id,text:String(text),importance,anchor:p.slice(),status:'omitted',reason}); return api; }
+      const lx=Math.max(rect.x,Math.min(rect.x+rect.w,px)),ly=Math.max(rect.y,Math.min(rect.y+rect.h,py));
+      const leader=Math.hypot(lx-px,ly-py)>24;
+      occupied.push({...rect,text:String(text),point:p.slice(),fixed,leader,id,importance});
+      labelEvidence.push({id,text:String(text),importance,anchor:p.slice(),status:'rendered',reason:''});
+      if(leader) labelItems.push(`<line${attrs({x1:px,y1:py,x2:lx,y2:ly,stroke:'#69788e','stroke-width':1.5,'data-label-leader':String(text)})}/>`);
+      labelItems.push(`<text${attrs({x:rect.x+3,y:rect.y+fontSize,'font-size':fontSize,'font-weight':600,fill:'#18233a','paint-order':'stroke',stroke:'white','stroke-width':4.5,'stroke-linejoin':'round',...style})}>${esc(text)}</text>`);
+      return api;
+    }
+    function axes({step=1,grid=true,xLabel='x',yLabel='y'}={}) {
+      if(!Number.isFinite(step)||step<=0||(xMax-xMin+yMax-yMin)/step>1000) throw new Error('Invalid axis step');
+      if(typeof xLabel!=='string'||typeof yLabel!=='string') throw new Error('axis labels must be strings');
+      // Coordinate labels are semantic anchors: reserve them before ticks and never relocate them.
+      if(inside([0,0])) label([0,0],'O',{fontSize:20,dx:-23,dy:28,fixed:true});
+      if(xLabel&&yMin<=0&&yMax>=0) label([xMax,0],xLabel,{dx:-14,dy:-12,fixed:true});
+      if(yLabel&&xMin<=0&&xMax>=0) label([0,yMax],yLabel,{dx:12,dy:28,fixed:true});
+      const ticks=(min,max)=>{const first=Math.ceil(min/step),last=Math.floor(max/step);if(!Number.isSafeInteger(first)||!Number.isSafeInteger(last)||last-first>10000)throw new Error('Tick range exceeds numerical precision or density');return Array.from({length:Math.max(0,last-first+1)},(_,i)=>(first+i)*step);};
+      for(const x of ticks(xMin,xMax)) {
+        if(grid) line([x,yMin],[x,yMax],{stroke:'#dce3ed','stroke-width':1});
+        if(Math.abs(x)>1e-9 && yMin<=0&&yMax>=0) label([x,0],String(Number(x.toFixed(8))),{fontSize:20,dx:-6,dy:30,fixed:true,importance:'decorative'});
+      }
+      for(const y of ticks(yMin,yMax)) {
+        if(grid) line([xMin,y],[xMax,y],{stroke:'#dce3ed','stroke-width':1});
+        if(Math.abs(y)>1e-9 && xMin<=0&&xMax>=0) label([0,y],String(Number(y.toFixed(8))),{fontSize:20,dx:10,dy:13,fixed:true,importance:'decorative'});
+      }
+      if(yMin<=0&&yMax>=0) line([xMin,0],[xMax,0],{stroke:'#465168','stroke-width':2,'marker-end':`url(#${id}-axis)`});
+      if(xMin<=0&&xMax>=0) line([0,yMin],[0,yMax],{stroke:'#465168','stroke-width':2,'marker-end':`url(#${id}-axis)`});
+      return api;
+    }
+    function curve(fn,{segments=[[xMin,xMax]],domain=()=>true,samples=400,maxJump=height, ...style}={}) {
+      if(!Number.isInteger(samples)||samples<2||samples>100000||!Number.isFinite(maxJump)||maxJump<=0) throw new Error('Invalid sampling settings');
+      let d='';
+      for(const segment of segments) {
+        if(!finite(segment)||segment[0]>=segment[1]) throw new Error('Expected increasing finite segments');
+        let prev=null;
+        for(let i=0;i<=samples;i++) {
+          const x=segment[0]+(segment[1]-segment[0])*i/samples;
+          let y=NaN; if(domain(x)) y=fn(x);
+          if(!Number.isFinite(y)){prev=null;continue;}
+          const q=map([x,y]);
+          d+=`${!prev||Math.hypot(q[0]-prev[0],q[1]-prev[1])>maxJump?'M':'L'}${q[0].toFixed(3)},${q[1].toFixed(3)} `;
+          prev=q;
+        }
+      }
+      return add('path',{d:d.trim(),fill:'none',stroke:'#315eca','stroke-width':3,'stroke-linecap':'round','stroke-linejoin':'round',...style});
+    }
+    const api={width,height,scale,map,inside,labels:occupied,collisions,labelEvidence,axes,line,label,curve,
+      point(p,{r=5,...style}={}){if(!finite(p))throw new Error('Invalid point'); const q=map(p);items.push(`<ellipse cx="${q[0]}" cy="${q[1]}" rx="${r+5}" ry="${r+5}" fill="rgba(197,61,37,0.16)" stroke="none"/>`);return add('circle',{cx:q[0],cy:q[1],r,fill:'#c53d25',stroke:'white','stroke-width':2.2,'paint-order':'stroke',...style});},
+      circle(p,r,style={}){if(!finite(p)||!Number.isFinite(r)||r<0)throw new Error('Invalid circle');const q=map(p);if(!style.fill||style.fill==='none')items.push(`<ellipse cx="${q[0]}" cy="${q[1]}" rx="${r*scale}" ry="${r*scale}" fill="rgba(49,94,202,0.055)" stroke="none"/>`);return add('circle',{cx:q[0],cy:q[1],r:r*scale,fill:'none',stroke:'#315eca','stroke-width':3,...style});},
+      polygon(points,style={}){if(points.length<3||!points.every(finite))throw new Error('Invalid polygon');return add('polygon',{points:points.map(p=>map(p).join(',')).join(' '),fill:'#315eca22',stroke:'#315eca','stroke-width':3,'stroke-linejoin':'round',...style});},
+      arrow(a,b,style={}){return line(a,b,{'marker-end':`url(#${id}-arrow)`,...style});},
+      /* labelEvidence 以非显示的 metadata 随 SVG 带出，供只拿到 SVG 字符串的审校路径读取；
+         每次调用 svg() 现算现嵌，不累积、不改变学生可见内容。 */
+      svg(){
+        const frame=`<rect x="0" y="0" width="${width}" height="${height}" fill="rgb(252,251,248)"/><rect x="0" y="0" width="${width}" height="${height}" fill="url(#${id}-subgrid)"/>`;
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${id}-title" style="shape-rendering:geometricPrecision;text-rendering:optimizeLegibility"><title id="${id}-title">${esc(title)}</title><defs><clipPath id="${id}-clip"><rect x="${left}" y="${top}" width="${right-left}" height="${bottom-top}"/></clipPath><pattern id="${id}-subgrid" width="24" height="24" patternUnits="userSpaceOnUse"><polyline points="24,0 0,0 0,24" fill="none" stroke="rgba(24,24,27,0.04)" stroke-width="0.75"/><ellipse cx="0" cy="0" rx="0.85" ry="0.85" fill="rgba(24,24,27,0.12)"/></pattern><marker id="${id}-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/></marker><marker id="${id}-axis" viewBox="0 0 10 10" refX="7.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto"><polygon points="0,1.2 9.5,5 0,8.8 2.2,5" fill="context-stroke"/></marker></defs>${frame}<g clip-path="url(#${id}-clip)">${items.join('')}</g><g font-family="Georgia,'Times New Roman','PingFang SC','Microsoft YaHei',serif">${labelItems.join('')}</g><metadata data-mathviz-label-evidence="${esc(JSON.stringify(labelEvidence))}"></metadata></svg>`;
+      }
+    };
+    return api;
+  }
+  return {createPlot,project3,vector,fraction,approximate,escape:esc};
+});
+
+</script><script>
+/* 统一课堂壳的步骤播放器：模型/场景函数属于题目自己；壳负责步骤标签页、参数栏与备课提示开关。
+ *
+ * 【已冻结 · 2026-09-19】本文件是"低层组合路径"的参考壳，不再演进：
+ * 不新增能力、不做行为改动（仅允许修复确定的缺陷）。配置路径（build_lesson.cjs +
+ * modules.js + player.js）是唯一演进路径，新能力只进入 modules.js 的模块契约。
+ * 新任务能用配置路径就不要新写本壳页面；历史案例页面保留原样，逐步迁移到配置构建。 */
+(function(root){
+  'use strict';
+  function mount(config){
+    const $=id=>document.getElementById(id), state={step:0,...config.initial};
+    const controls=config.controls||[];
+    const stepsNav=$('steps'), tabs=[], stopButtons=[];
+    if(stepsNav){
+      config.steps.forEach((s,i)=>{
+        const b=document.createElement('button');
+        b.type='button';b.setAttribute('aria-label',s.title);
+        b.append(document.createTextNode(String(i+1).padStart(2,'0')));
+        if(s.tab){const span=document.createElement('span');span.textContent=s.tab;b.append(span);}
+        b.addEventListener('click',()=>{state.step=i;paint();});
+        stepsNav.append(b);tabs.push(b);
+      });
+    }
+    const notesToggle=$('notes-toggle'),notes=$('notes');
+    if(notesToggle&&notes)notesToggle.addEventListener('click',()=>{
+      const open=notes.hidden;notes.hidden=!open;notesToggle.setAttribute('aria-expanded',String(open));
+    });
+    function paint(){
+      const step=config.steps[state.step];
+      $('step-title').textContent=step.title;
+      $('explanation').innerHTML=step.body(state);
+      $('question').textContent=typeof step.question==='function'?step.question(state):(step.question||'');
+      $('visual').innerHTML=config.draw(state);
+      $('counter').textContent=`${state.step+1} / ${config.steps.length}`;
+      $('previous').disabled=state.step===0;
+      $('next').disabled=state.step===config.steps.length-1;
+      tabs.forEach((b,i)=>{if(i===state.step)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');});
+      let anyVisible=false;
+      for(const c of controls){
+        const visible=state.step>=(c.from||0) && state.step<=(c.to??Infinity);
+        $('wrap-'+c.key).hidden=!visible;anyVisible=anyVisible||visible;
+        $('value-'+c.key).textContent=c.format?c.format(state[c.key]):String(state[c.key]);
+        $('input-'+c.key).value=String(state[c.key]);
+      }
+      $('controls').hidden=!anyVisible;
+      for(const s of stopButtons)s.b.setAttribute('aria-pressed',String(state[s.c.key]===s.v));
+    }
+    for(const c of controls){
+      const wrap=document.createElement('div');wrap.className='parameter';wrap.id='wrap-'+c.key;
+      const heading=document.createElement('div');heading.className='parameter-heading';
+      const name=document.createElement('span');name.textContent=c.label;
+      const value=document.createElement('output');value.id='value-'+c.key;
+      heading.append(name,value);
+      const rangeWrap=document.createElement('div');rangeWrap.className='range-wrap';
+      const input=document.createElement('input');input.type='range';input.id='input-'+c.key;
+      input.min=c.min;input.max=c.max;input.step=c.step;input.value=state[c.key];
+      input.addEventListener('input',()=>{state[c.key]=Number(input.value);paint();});
+      value.htmlFor=input.id;
+      const labels=document.createElement('div');labels.className='range-labels';
+      const lo=document.createElement('span');lo.textContent=c.format?c.format(c.min):String(c.min);
+      const hint=document.createElement('span');
+      const hi=document.createElement('span');hi.textContent=c.format?c.format(c.max):String(c.max);
+      labels.append(lo,hint,hi);
+      rangeWrap.append(input,labels);
+      wrap.append(heading,rangeWrap);
+      if(Array.isArray(c.stops)&&c.stops.length){
+        const stops=document.createElement('div');stops.className='stops';stops.setAttribute('aria-label','代表位置');
+        for(const v of c.stops){
+          const b=document.createElement('button');b.type='button';
+          b.textContent=c.format?c.format(v):String(v);
+          b.addEventListener('click',()=>{state[c.key]=v;paint();});
+          stops.append(b);stopButtons.push({c,v,b});
+        }
+        wrap.append(stops);
+      }
+      $('controls').append(wrap);
+    }
+    $('previous').addEventListener('click',()=>{if(state.step>0){state.step--;paint();}});
+    $('next').addEventListener('click',()=>{if(state.step<config.steps.length-1){state.step++;paint();}});
+    $('reset').addEventListener('click',()=>{Object.assign(state,config.initial);paint();});
+    $('restart').addEventListener('click',()=>{Object.assign(state,config.initial);state.step=0;paint();});
+    paint();
+    return {state,paint};
+  }
+  root.MathLesson={mount};
+})(globalThis);
+
+</script><script>
+(function(root){
+'use strict';
+const blue='#315eca',orange='#b65320',teal='#23796d';
+const minus=s=>String(s).replace(/-/g,'−');
+const models={
+ cubic:x=>x*x*x-x+1,
+ piece:(x,a)=>x<0?-x*x-2*a*x-a:Math.exp(x)+Math.log1p(x),
+ circleCount:r=>[1,3].reduce((n,d)=>n+(r<d?0:r===d?1:2),0),
+ retained:(i,j)=>[1,2,3,4,5,6].filter(n=>n!==i&&n!==j),
+ isAP:a=>a.length===4&&a[1]-a[0]===a[2]-a[1]&&a[2]-a[1]===a[3]-a[2],
+ occupancy:()=>{const counts=[0,0,0,0];for(let a=1;a<=5;a++)for(let b=1;b<=5;b++)for(let c=1;c<=5;c++)counts[new Set([a,b,c]).size]++;return counts;}
+};
+function plot(bounds,title){return root.MathViz.createPlot({width:680,height:450,...bounds,title});}
+function end(p){return p.svg();}
+const lessons={
+'2022-q10':{
+ initial:{u:0.5},controls:[{key:'u',label:'观察横坐标 u',min:-1.4,max:1.4,step:0.1,from:3,to:3}],
+ steps:[
+ {title:'先判断各选项需要什么证据',tab:'证据',question:'一条曲线有两个极值点，就一定有三个零点吗？',body:()=>'<p>图像用于提出猜测。四个选项各要一种证据：增减看导数的正负，零点个数看极大值与极小值是否异号（一个为正、一个为负），对称看每一对对应点是否以同一点为中点，切线看斜率相同之外是否还经过同一点。</p><div class="formula">f(x)=x³−x+1</div>'},
+ {title:'导数决定增减',tab:'导数',question:'两个驻点两侧，导数是否变号？',body:()=>'<div class="formula">f′(x)=3x²−1</div><p>f′(x) 在 (−∞,−1/√3)、(−1/√3,1/√3)、(1/√3,+∞) 三个区间上的符号依次为 +、−、+：在两个驻点两侧都变号（先由正变负，再由负变正），两处都是极值点，A 正确。</p><p class="note">图中青绿色点标出两个驻点（导数为 0 的点）。</p>'},
+ {title:'极小值仍在 x 轴上方',tab:'零点',question:'为什么右边的曲线不会再次穿过 x 轴？',body:()=>'<div class="formula">f(−1/√3)=1+2/(3√3)>0；f(1/√3)=1−2/(3√3)>0</div><p>极大值与极小值同为正数。右边的曲线在 [1/√3,+∞) 上单调递增，而它在起点 1/√3 处的值（极小值）已经大于 0，所以不会再穿过 x 轴。结合左端趋于 −∞ 及三个单调区间，只有一个零点，B 错误。</p>'},
+ {title:'关于一个点对称，看一对对应点',tab:'对称',question:'拖动 u，两点的中点会变化吗？',body:s=>'<div class="formula">f(u)+f(−u)=(u³−u+1)+(−u³+u+1)=2</div><p>三次项与一次项恰好抵消，和恒为 2。两点中点的横坐标是 (u+(−u))/2=0，纵坐标是 (f(u)+f(−u))/2=1，所以中点恒为 (0,1)，C 正确。</p><p class="note">u='+minus(s.u)+(s.u===0?'：两对应点此时与中点重合于 (0,1)（退化情形），恒等式仍成立。':'；图中橙色为一对对应点，紫色为它们的中点。')+'点值仅用于观察，恒等式给出一般依据。</p>'},
+ {title:'斜率相同，还必须经过同一点',tab:'切线',question:'斜率相同为什么还不能说相切？',body:()=>'<p>把切点的横坐标记为 t（本步没有要拖动的量）。曲线在 x=t 处的切线要成为直线 y=2x，先要有相同的斜率。y=2x 的斜率是 2，令 f′(t)=3t²−1=2，得 t=1 或 t=−1——只有这两处的切线与 y=2x 平行，需要检查的只剩这两处。</p><div class="formula">f′(t)=2 ⇒ t=±1</div><p>斜率相同还不够，切点 (t,f(t)) 还必须落在 y=2x 上。t=1 时切点是 (1,f(1))=(1,1)，切线为 y=2x−1；而 y=2x 在 x=1 处经过 (1,2)，切点不在 y=2x 上，两线平行而不重合。t=−1 时切点是 (−1,1)，切线为 y=2x+3；y=2x 在 x=−1 处经过 (−1,−2)，同样不重合。</p><p>两处都满足斜率条件，却都不是 y=2x，所以 D 错误。答案 A、C。</p><p class="note">图中灰色虚线是 y=2x，两条橙色直线分别是 t=1 与 t=−1 处的切线：斜率相同，位置不同。</p>'}
+ ],draw:s=>{const p=plot({xMin:-2,xMax:2,yMin:-3,yMax:5},'三次函数与当前观察关系');p.axes({step:1});p.curve(models.cubic);
+ if(s.step===1||s.step===2){for(const x of [-1/Math.sqrt(3),1/Math.sqrt(3)])p.point([x,models.cubic(x)],{fill:teal});}
+ if(s.step===3){const u=s.u;if(u!==0){p.line([u,models.cubic(u)],[-u,models.cubic(-u)],{stroke:orange});p.point([u,models.cubic(u)],{fill:orange});p.point([-u,models.cubic(-u)],{fill:orange});}p.point([0,1],{fill:'#7e3daf'});p.label([0,1],u===0?'u=0：两点重合于 (0,1)':'中点 (0,1)',{fill:'#7e3daf',fontSize:20,dx:16,dy:-14});}
+ if(s.step===4){p.curve(x=>2*x,{stroke:'#6b7280','stroke-dasharray':'8 6'});for(const t of [1,-1]){p.curve(x=>models.cubic(t)+2*(x-t),{stroke:orange});p.point([t,models.cubic(t)],{fill:orange});p.label([t,models.cubic(t)],'t='+t,{fill:orange,fontSize:20,dx:14,dy:t>0?-16:22});}}return end(p);}
+},
+ '2024-q6':{
+ initial:{a:-0.5},controls:[{key:'a',label:'参数 a',min:-2,max:1,step:0.1,from:0,stops:[-2,-1,0,0.5]}],
+ steps:[
+ {title:'“在 R 上单调递增”要求什么？',tab:'题意',question:'题目中的函数在 x=0 的左右两侧分别由哪个表达式给出？',body:()=>'<p>2024 年高考第 6 题：函数 f(x) 分两段，x&lt;0 时 f(x)=−x²−2ax−a，x≥0 时 f(x)=eˣ+ln(x+1)。已知 f(x) 在 R 上单调递增，求参数 a 的取值范围。</p><div class="formula">x&lt;0：f(x)=−x²−2ax−a；　x≥0：f(x)=eˣ+ln(x+1)</div><p>“在 R 上单调递增”按定义展开：在定义域 R 内任意取 x₁&lt;x₂，都必须有 f(x₁)&lt;f(x₂)。“任意取”的意思是：两点的组合既包括两点同在一段，也包括 x₁ 取负数、x₂ 取 0 或正数的情形。</p><p>图中蓝色曲线是 x&lt;0 的一段，橙色曲线是 x≥0 的一段，灰色竖直虚线标出分段点 x=0。接下来的推理用到两项已有知识：在区间内部用导数的正负判断增减；以及单调递增的定义本身。</p><p class="note">本题在两个区间使用不同的表达式：x&lt;0 用一段、x≥0 用另一段，函数 f 本身在整个 R 上都有定义。求导只在各段内部进行；x=0 这一点不求导——判断单调性不需要分段点可导，跨过 0 时直接比较函数值。</p><p>下面先分别检查两段内部的增减，再检查跨段的组合。</p>'},
+ {title:'当 x＜0 时，a 需要满足什么条件？',tab:'负数区间',question:'请把 a 拖到大于 0（例如 0.5）：左段靠近 0 的部分是上升还是下降？青绿色点标出的是哪一点，它的横坐标与 a 有什么关系？',body:s=>{const tip=s.a>0?'当前 a='+minus(s.a.toFixed(1))+'：图中的青绿色点是左段的最高点，横坐标为 −a='+minus((-s.a).toFixed(1))+'；从这一点向右到分段点 0，函数下降。':'当前 a='+minus(s.a.toFixed(1))+'≤0：左段整段上升。';return '<p>先看 x&lt;0 的一段。它在 (−∞,0) 内可导，导数为：</p><div class="formula">f′(x)=−2x−2a（x&lt;0）</div><p>若 a≤0：每个 x&lt;0 都有 −2x&gt;0，且 −2a≥0，相加得 f′(x)&gt;0。导数恒正，这一段在 (−∞,0) 上单调递增。</p><p>若 a&gt;0：取满足 −a&lt;x&lt;0 的 x。a&gt;0 时这个区间非空，里面的数都是负数，确实属于左段。此时 x&gt;−a，所以 −2x&lt;2a，f′(x)=−2x−2a&lt;0，左段在 (−a,0) 内下降。“在 R 上单调递增”首先要求每一段都不下降，因此 a&gt;0 不符合题意。</p><div class="formula">左段单调递增 ⟺ a≤0</div><p>'+tip+'</p>';}},
+ {title:'当 x≥0 时，函数是否单调递增？',tab:'非负区间',question:'这一段的最小值是多少？在哪个点取得？',body:()=>'<p>再看 x≥0 的一段。在 (0,+∞) 内：</p><div class="formula">f′(x)=eˣ+1/(x+1)</div><p>两项都大于 0：eˣ 对任何 x 都大于 0；x&gt;0 时 x+1&gt;1，所以 1/(x+1)&gt;0。导数恒正，这一段在 (0,+∞) 上单调递增。</p><p>表达式在 x=0 处连续，f(0)=e⁰+ln 1=1。任取 b&gt;0：函数在闭区间 [0,b] 上连续、开区间内导数恒正，就在 [0,b] 上单调递增（课本中的结论）；b 可以任意大，所以这一段在 [0,+∞) 上单调递增，图中实心点标出的 f(0)=1 就是它的最小值。</p><p>这一段的表达式中没有 a，对 a 没有任何限制。</p>'},
+ {title:'两段各自递增，为什么还不能下结论？',tab:'反例',question:'请选择 a=−2：在图上找出一个 x₁＜0，使它的函数值大于 f(0)=1。',body:s=>{const limit=minus((-s.a).toFixed(1));let status;if(s.a<-1)status='左段越过了高度为 1 的虚线，空心蓝点 (0,−a) 在 (0,1) 上方：存在负数 x₁，函数值大于 f(0)=1。';else if(s.a>0)status='左段整段在虚线下方，跨段没有问题；但 a&gt;0 时左段内部有下降区间（见“负数区间”一步），函数仍不在 R 上单调递增（注意 a&gt;0 时 −a 已不再是左段函数值的上界）。';else if(s.a===-1)status='−a=1，空心蓝点恰好与 (0,1) 重合：左段每个函数值仍严格小于 1，跨段仍是严格的小于号，没有违反定义的组合。';else status='左段整段在高度为 1 的虚线下方，目前没有出现违反定义的跨段组合。';const purple=s.a<-1?'紫色虚线连出的两个点函数值相同（都等于 1）、横坐标不同，左端那一点在图中标为“左段取到 1”。':'';return '<p>到此为止，只要 a≤0，两段各自都递增。但还不能说 f 在 R 上单调递增：定义要求任意 x₁&lt;x₂ 都有 f(x₁)&lt;f(x₂)，两段各自的递增只覆盖了“两个数同在一段”的组合；x₁ 取负数、x₂ 取 0 或正数的跨段组合，还没有检查。</p><p>把 a 调成 −2，左段变成 f(x)=−x²+4x+2。此时两段各自递增都成立，但当 x 从左侧接近 0 时，左段的函数值无限接近 −a=2，大于 f(0)=1。取 x₁=−0.1：f(x₁)=−0.01−0.4+2=1.59&gt;1=f(0)（可直接代入左段表达式验算），而 x₁=−0.1&lt;0=x₂——自变量较小，函数值反而较大，违反单调递增的定义。图中水平虚线的高度是 1；a=−2 时左段越过这条虚线。'+purple+'</p><p>当前 a='+minus(s.a.toFixed(1))+'，−a='+limit+'。'+status+'</p><p>跨段组合是一项独立的检查，两段各自的递增代替不了它。</p>';}},
+ {title:'跨段的比较怎样化成两个数的比较？',tab:'两侧比较',question:s=>s.a>0?'当前左段靠近 0 的部分是上升还是下降（对照“负数区间”一步）？':'当前 −a 与 f(0)=1 哪个大？空心蓝点和实心橙点在图上谁高？',body:s=>'<p>跨段组合有无穷多对，一对一对查不完，我们把它压缩成两个数的比较。</p><p>以下在 a≤0 的前提下进行：左段此时递增，函数值全部小于它在 0 左侧的极限 −a，并且 x 越接近 0（仍小于 0），函数值与 −a 越接近——−a 是左段函数值的最高界限，碰不到、但能任意接近。右段递增，最小值在 x₂=0 处，等于 f(0)=1。于是任取 x₁&lt;0≤x₂：</p><div class="formula">a≤0 时：f(x₁)&lt;−a，且 f(x₂)≥1</div><p>图中空心蓝点是 (0,−a)——它不属于左段图像，在 a≤0 时标出界限的位置；实心橙点是 (0,1)。当前 a='+minus(s.a.toFixed(1))+'，−a='+minus((-s.a).toFixed(1))+'，'+(s.a>0?'注意 a&gt;0 时左段内部已有下降区间（见“负数区间”一步），f(x₁)&lt;−a 不再成立，空心蓝点此时不代表左段的上界；本题已可排除，跨段比较是 a≤0 时才需要做的检查。':s.a<-1?'空心蓝点在实心橙点上方，左段越过高度为 1 的虚线。':'空心蓝点不在实心橙点上方，左段不越过高度为 1 的虚线。')+'</p>'},
+ {title:'比较 −a 与 1，怎样得到对 a 的要求？',tab:'双向推理',question:'把 a 从 −0.5 拖到 −1.5：左段从虚线下方变到上方，发生在哪个 a 值？',body:s=>(s.a>0?'<p class="note">当前 a&gt;0：左段内部已有下降区间（见“负数区间”一步），本题已可排除；下面的跨段推理在 a≤0 的前提下进行。</p>':'')+'<p>在 a≤0 的前提下：若 −a≤1，即 a≥−1，则 f(x₁)&lt;−a≤1≤f(x₂)，一切跨段组合都满足定义。</p><p>若 −a&gt;1，即 a&lt;−1：左段的函数值能任意接近 −a&gt;1，就一定能取到负数 x₁ 使 f(x₁)&gt;1=f(0)，取 x₂=0 即违反定义。所以跨段检查给出：</p><div class="formula">跨段全部满足 ⟺ −a≤1，即 a≥−1</div><p>“比较接近 0 的函数值与 f(0)”不是背出来的套路：跨段组合里最难满足的是“左段函数值尽量高、右段函数值尽量低”的情形，本题左段的最高界限出现在趋近 0 处（就是 −a），右段的最低点恰是 f(0)=1，所以只需比较 −a 与 1。换一道分段函数的题，这两个界限在哪里，要按题目重新找，不能照搬这句话。</p>'},
+ {title:'合并条件并检查端点',tab:'结论',question:'a=−1 时左段的函数值能不能等于 1？两个端点为什么可以取等号？',body:()=>'<p>把三条结论合并：左段递增要求 a≤0；右段没有限制；跨段要求 a≥−1。</p><p>范围之外都不行：a&gt;0 时左段内部有下降区间；a&lt;−1 时跨段能取到违反定义的组合。范围内的值都行：同段的组合由两段各自递增保证，跨段的组合由 f(x₁)&lt;−a≤1≤f(x₂) 保证。</p><p>两个端点可以取等号。a=−1 时：−a=1，左段每个函数值都严格小于 −a=1=f(0)，跨段仍是严格的小于号，合法。a=0 时：左段为 f(x)=−x²（x&lt;0），f′(x)=−2x 对每个 x&lt;0 都大于 0，递增；−a=0&lt;1=f(0)，跨段界限绰绰有余，合法。</p><div class="formula">a∈[−1,0]，选 B。</div>'}
+ ],draw:s=>{const p=root.MathViz.createPlot({width:450,height:450,xMin:-2,xMax:2,yMin:-2,yMax:3,title:'分段函数在 x=0 附近的局部图像'});p.axes();
+ p.line([0,-2],[0,3],{stroke:'#94a3b8','stroke-dasharray':'4 5','stroke-width':1.5});
+ p.curve(x=>models.piece(x,s.a),{segments:[[-2,-0.001]],'stroke-width':s.step===1?4:3});
+ p.curve(x=>models.piece(x,s.a),{segments:[[0,2]],stroke:orange,'stroke-width':s.step===2?4:3});
+ if(s.step===1&&s.a>0){p.point([-s.a,models.piece(-s.a,s.a)],{fill:teal,r:4});p.label([-s.a,models.piece(-s.a,s.a)],'左段最高点，向右下降',{fill:teal,fontSize:20,dx:-10,dy:-30});}
+ if(s.step===2){p.point([0,1],{fill:orange,r:5});p.label([0,1],'f(0)=1',{fill:orange,fontSize:20,dx:28,dy:16});}
+ if(s.step>=3){p.line([-2,1],[2,1],{stroke:orange,'stroke-dasharray':'7 6','stroke-width':2});
+  p.point([0,1],{fill:orange,r:5});p.label([0,1],'f(0)=1',{fill:orange,fontSize:20,dx:28,dy:16});
+  p.point([0,-s.a],{fill:'white',stroke:blue,'stroke-width':3,r:7});p.label([0,-s.a],'−a='+(-s.a).toFixed(1).replace('-','−'),{fill:blue,fontSize:20,dx:40,dy:26});
+  if(s.a<-1){const t=Math.sqrt(s.a*s.a-s.a-1),xs=-s.a-t;p.point([xs,1],{fill:'white',stroke:blue,'stroke-width':3,r:6});p.line([xs,1],[0,1],{stroke:'#7e3daf','stroke-dasharray':'5 5','stroke-width':2});p.label([xs,1],'左段取到 1',{fill:'#7e3daf',fontSize:20,dx:-40,dy:-26});}}
+ return end(p);}
+},
+'2024-q19-1':{
+ initial:{pair:0},controls:[{key:'pair',label:'删去的一对下标',min:0,max:14,step:1,from:1,format:v=>{let n=0;for(let i=1;i<6;i++)for(let j=i+1;j<=6;j++)if(n++===v)return `(${i},${j})`;}}],
+ steps:[
+ {title:'删去哪两项，剩下四项仍成等差？',tab:'下标',question:'公差不为 0 时，四项成等差与下标有什么关系？',body:()=>'<p>第（1）问：等差数列 {aₙ} 公差不为 0，共 6 项。删去 aᵢ、aⱼ 两项后，若剩下的四项仍能成等差数列，就称 (i,j) 可分。本页要找出所有可分的 (i,j)。</p><p>若 aₙ=a₁+(n−1)d 且 d≠0，下标相差 t 的两项之差为 aₙ₊ₜ−aₙ=td：项的差与下标的差成正比例。所以“四项成等差”（相邻项的差相等）与“四个下标等间隔”（相邻下标的差相等）是同一回事；d≠0 又保证下标不同则项不同。</p><div class="formula">比较下标，不必猜 a₁ 和 d</div>'},
+ {title:'删两项，检查剩下的四个下标',tab:'删项',question:'保留的四个下标，三个间距是否相等？',body:s=>{let n=0,pair;for(let i=1;i<6;i++)for(let j=i+1;j<=6;j++)if(n++===s.pair)pair=[i,j];const a=models.retained(...pair);return '<div class="formula">保留 '+a.join('，')+'</div><p>相邻间距：'+[a[1]-a[0],a[2]-a[1],a[3]-a[2]].join('，')+'——'+(models.isAP(a)?'三个间距相等，即下标等间隔，这四项可以组成等差数列。':'三个间距不全相等，下标不等间隔，这四项不能组成等差数列。')+'</p>'; }},
+ {title:'给出完整性理由',tab:'完整',question:'四个下标的公差可以是 2 吗？',body:()=>'<p>若保留的四个下标成等差数列（即可分）：它们都在 1 到 6 之间，最大跨度是 6−1=5；四个下标的公差 t 是正整数（下标都是整数，相邻的差至少是 1），总跨度 3t≤5，所以 t=1。因此可分的只有三组：保留 1，2，3，4；2，3，4，5；3，4，5，6。</p><div class="formula">保留 1，2，3，4 即删去 (5,6)；保留 2，3，4，5 即删去 (1,6)；保留 3，4，5，6 即删去 (1,2)</div><p class="note">本页只讨论第（1）问；第（2）（3）问暂不涉及。</p>'}
+ ],draw:s=>{let n=0,pair=[];for(let i=1;i<6;i++)for(let j=i+1;j<=6;j++)if(n++===s.pair)pair=[i,j];return '<div class="cards" aria-label="六个下标">'+[1,2,3,4,5,6].map(i=>'<div class="number '+(s.step>0&&pair.includes(i)?'removed':'')+'">'+i+'<small>'+(s.step>0&&pair.includes(i)?'删去':'保留')+'</small></div>').join('')+'</div><p class="note">卡片表示离散下标，不把它们连成连续曲线。</p>';}
+},
+ '2025-q7':{
+ initial:{r:2},controls:[{key:'r',label:'圆的半径 r',min:0.25,max:4,step:0.25,from:4,stops:[1,2,3]}],
+ steps:[
+ {title:'题目要求我们找出怎样的点？',tab:'题意',question:'所求的点需要同时满足哪两个条件？',body:()=>'<p>题目要求：圆 x²+(y+2)²=r² 上，到直线 y=√3x+2 的距离等于 1 的点恰有两个。我们要据此求出半径 r 的取值范围。</p><p>蓝色图形表示圆，圆心为 C(0,−2)；灰色虚线表示题目给出的直线，记为 ℓ。所求的点必须同时满足两个条件：在圆上；到直线 ℓ 的距离等于 1。</p>'},
+ {title:'到直线 ℓ 的距离等于 1 的点在哪里？',tab:'距离条件',question:'为什么直线 ℓ 的两侧都可能有满足距离条件的点？',body:()=>'<p>先不考虑圆，只研究距离条件。点到直线的距离，指从这个点向直线所作垂线段的长度。</p><p>图中橙色点 P 是满足这个条件的一个例子：从 P 向 ℓ 作垂线，垂足是青绿色点，这段垂线段的长度就是 P 到 ℓ 的距离，等于 1。P 只是距离条件的样例，与圆无关。这样的点不只在 ℓ 的一侧：ℓ 两侧各有一条由这样的点组成的直线。</p><p>设满足条件的一点坐标为 (x,y)，由距离公式可得：</p><div class="formula">|√3x−y+2|/2=1。</div><p>绝对值里的式子等于 2 或 −2：取 2 时点在 ℓ 的一侧，取 −2 时点在 ℓ 的另一侧，分别得到 y=√3x 和 y=√3x+4。两条橙色平行直线上的点都满足这个距离条件，满足条件的点也都在这两条直线上；样例点 P 就在其中的直线 y=√3x 上。</p>'},
+ {title:'为什么要找圆与这两条直线的交点？',tab:'同时满足',question:'两条辅助直线上的交点会不会是同一个点？',body:()=>'<p>刚才找出了所有到直线 ℓ 的距离等于 1 的点，它们组成两条橙色直线。</p><p>现在加上另一个条件：点必须在圆上。因此，所求的点就是圆与这两条直线的交点。每个交点同时满足两个条件，符合题意的点也不会遗漏。</p><p>两条辅助直线平行且不重合，因此不会把同一个点计算两次。</p>'},
+ {title:'圆心到两条辅助直线的距离分别是多少？',tab:'圆心距离',question:'这里的 1 和 3 分别表示圆心到哪条直线的距离？',body:()=>'<p>判断圆与直线有几个公共点，需要比较圆心到直线的距离和圆的半径。</p><p>将圆心 C(0,−2) 代入点到直线的距离公式，得到：</p><div class="formula">到 y=√3x 的距离：|√3×0−(−2)|/2=1；<br>到 y=√3x+4 的距离：|√3×0−(−2)+4|/2=3。</div><p>青绿色虚线段分别连接圆心和两条辅助直线上的垂足，表示这两个距离。</p><p>注意区分两个距离：题目条件里的“距离为 1”，指的是圆上的点到直线 ℓ 的距离；这里的 1 和 3，是圆心 C 到两条辅助直线的距离。前者的 1 与后者的 1 数值恰好相同，但它们是不同的量。</p>'},
+ {title:'半径改变时，公共点的个数怎样变化？',tab:'改变半径',question:'请分别选择 r=1 和 r=3，检查相切时总共有几个公共点。',body:s=>'<p>圆心到直线的距离小于、等于或大于半径时，圆与直线分别有 2 个、1 个或 0 个公共点（这是已经学过的判据）。本题要对两条辅助直线分别使用这个判据，再把两条直线上的公共点个数相加。</p><p>两条辅助直线到圆心的距离分别为 1 和 3，因此可以按这两个数讨论半径：</p><div class="formula">r&lt;1：0 个；r=1：1 个；<br>1&lt;r&lt;3：2 个；r=3：3 个；r&gt;3：4 个。</div><p>当前 r='+s.r+'，图中符合题意的点共有 '+models.circleCount(s.r)+' 个。</p>'},
+ {title:'哪些半径能使符合条件的点恰有两个？',tab:'结论',question:'为什么 r=1 和 r=3 都不能取？',body:()=>'<p>只有当 r&gt;1 且 r&lt;3 时，圆与较近的辅助直线 y=√3x 有两个公共点，与较远的 y=√3x+4 没有公共点，总数恰好为两个。</p><p>r=1 时圆与 y=√3x 相切，只有一个公共点；r=3 时圆与 y=√3x+4 也相切，多出一个公共点，总数为三个。因此两个端点都不符合题意。</p><div class="formula">1&lt;r&lt;3，选 B。</div>'}
+ ],draw:s=>{const p=plot({xMin:-5,xMax:5,yMin:-6,yMax:5},'圆与两条辅助直线的公共点');p.label([0,-2],'C',{dx:12,dy:-12});p.axes({step:2});p.circle([0,-2],s.r,{stroke:blue,fill:'none','stroke-width':3});p.point([0,-2],{fill:blue});p.curve(x=>Math.sqrt(3)*x+2,{stroke:'#6b7280','stroke-dasharray':'8 6'});p.label([1.6,Math.sqrt(3)*1.6+2],'ℓ',{fill:'#6b7280',fontSize:20,dx:10,dy:-8});
+ if(s.step>=1){for(const b of [0,4]){p.curve(x=>Math.sqrt(3)*x+b,{stroke:orange});const d=(2+b)/2;const foot=[-Math.sqrt(3)*(2+b)/4,-2+(2+b)/4];if(s.step>=2)p.label([-2.2,Math.sqrt(3)*(-2.2)+b],b===0?'y=√3x':'y=√3x+4',{dx:-12,dy:-12,fill:orange});if(s.step>=3){p.line([0,-2],foot,{stroke:teal,'stroke-dasharray':'5 5'});p.label([foot[0]/2,-2+(foot[1]+2)/2],String(d),{dx:b===0?-26:-10,dy:b===0?26:-20,fill:teal});p.point(foot,{fill:teal,r:3});}if(s.step>=2&&s.r>=d){const t=Math.sqrt(Math.max(0,s.r*s.r-d*d));for(const sign of t===0?[1]:[-1,1])p.point([foot[0]+sign*t/2,foot[1]+sign*Math.sqrt(3)*t/2],{fill:orange,r:6});}}}
+ if(s.step===1){const P=[1,Math.sqrt(3)],F=[1-Math.sqrt(3)/2,Math.sqrt(3)+1/2];p.point(P,{fill:orange,r:5});p.label(P,'P',{dx:16,dy:16,fill:orange});p.line(P,F,{stroke:orange,'stroke-width':3.5});p.point(F,{fill:teal,r:3});p.label([(P[0]+F[0])/2,(P[1]+F[1])/2],'1',{fill:orange,fontSize:20,dx:18,dy:-16});}return end(p);}
+},
+'2025-q14':{
+ initial:{ball:1},controls:[{key:'ball',label:'观察第几个球',min:1,max:5,step:1,from:1,to:1}],
+ steps:[
+ {title:'要求不同球个数的期望，怎样拆开 X？',tab:'计数对象',question:'如果三次抽到 2、2、2，X 是多少？为什么？',body:()=>'<p>5 个球标号 1 到 5，有放回地抽 3 次，每次等可能地取出 1 球。X 表示至少被取出 1 次的不同球的个数，要求它的期望 E(X)。X 数的是“出现过哪些球”，不是“抽了几次”。比如三次抽到 1、1、2，X=2：1 号和 2 号出现过，1 号重复出现只计一次。</p><p>既然 X 数的是球，就按球来拆：对第 i 个球，若三次抽取中它出现过，记 Iᵢ=1；没出现过，记 Iᵢ=0。五个球各对应一个这样的数，把它们相加，恰好数出出现过几个不同的球：</p><div class="formula">X=I₁+I₂+I₃+I₄+I₅</div><p>图中卡片就是这 5 个球。先求出每个 Iᵢ 取 1 的概率，再利用期望的加法性质求 E(X)。</p>'},
+ {title:'只盯住一个球：它没被抽到的概率是多少？',tab:'单球',question:'当前观察第几个球？三次都没抽到它的概率怎样算？',body:s=>{const sub='₁₂₃₄₅'[s.ball-1];return '<p>当前观察球 '+s.ball+'。每次抽取抽到它的概率是 1/5，没抽到它的概率是 4/5。抽取是有放回的：每次抽完放回，下一次抽时 5 个球仍然等可能，所以三次抽取互不影响。</p><p>“球 '+s.ball+' 没出现过”就是三次都没抽到它：</p><div class="formula">(4/5)×(4/5)×(4/5)=(4/5)³=64/125</div><p>“出现过”与“没出现过”是对立事件，概率相加为 1，所以：</p><div class="formula">P(I'+sub+'=1)=1−64/125=61/125</div><p>先算“没出现”再相减，是因为“没出现”只有“三次都落空”一种情况，而“出现”要分出现一次、两次、三次分别计算，直接算反而麻烦。</p>';}},
+ {title:'五个球的期望为什么可以直接相加？',tab:'期望相加',question:'不同球是否出现并不相互独立，为什么还能直接相加？',body:()=>'<p>Iᵢ 只取 0 和 1 两个值，所以它的期望就是它取 1 的概率：E(Iᵢ)=P(Iᵢ=1)=61/125。五个球情况完全相同。</p><p>和的期望总等于期望的和——这是期望的加法性质，对任何随机变量成立，不要求它们相互独立。本题的五个指示变量确实不独立（三次抽取里一个球出现了，会挤占其他球出现的机会），但相加不受影响：</p><div class="formula">E(X)=E(I₁)+E(I₂)+E(I₃)+E(I₄)+E(I₅)=5×61/125=61/25</div>'},
+ {title:'怎样用枚举核对期望？',tab:'枚举核对',question:'表中 X=1、2、3 的序列数各是多少？加权平均是否等于 61/25？',body:()=>'<p>三次抽取每个位置都有 5 种可能，共 5×5×5=125 个等可能的序列。把它们按 X 的取值归类计数（三类合计 5+60+60=125），再用计数直接算期望：</p><div class="formula">E(X)=(1×5+2×60+3×60)/125=305/125=61/25</div><p>结果与拆分相加一致。枚举用于核对本题的结果；拆分求和给出这类问题的一般做法。</p><div class="formula">E(X)=61/25</div>'}
+ ],draw:s=>{const counts=models.occupancy();
+ if(s.step===0)return '<div class="cards">'+[1,2,3,4,5].map(i=>'<div class="number">'+i+'<small>球</small></div>').join('')+'</div><p class="note">三次抽取：有放回，每次各球等可能。</p>';
+ if(s.step===1)return '<div class="cards">'+[1,2,3,4,5].map(i=>'<div class="number '+(i===s.ball?'selected':'')+'">'+i+'<small>球</small></div>').join('')+'</div><p class="note">当前观察球 '+s.ball+'：三次都没抽到它的概率是 (4/5)³=64/125。</p>';
+ if(s.step===2)return '<div class="cards">'+[1,2,3,4,5].map(i=>'<div class="number">I'+'₁₂₃₄₅'[i-1]+'<small>E(Iᵢ)=61/125</small></div>').join('')+'</div><p class="note">每个指示变量的期望都是 61/125，五个相加得 61/25。</p>';
+ return '<table><caption>精确枚举，共 125 个序列</caption><thead><tr><th>X</th><th>序列数</th><th>概率</th></tr></thead><tbody>'+[1,2,3].map(i=>'<tr><td>'+i+'</td><td>'+counts[i]+'</td><td>'+root.MathViz.fraction(counts[i],125).text+'</td></tr>').join('')+'</tbody></table><p class="note">125 个序列等可能，概率 = 序列数 ÷ 125。</p>';}
+}
+};
+if(typeof module==='object'&&module.exports)module.exports={models,lessons};
+else root.GaokaoLessons={models,lessons};
+})(globalThis);
+
+</script><script>globalThis.lesson=MathLesson.mount(GaokaoLessons.lessons["2024-q19-1"]);</script></html>

@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "title": "2024 新高考Ⅰ卷第6题：分段函数在 R 上单调递增",
+  "equation": "f(x) = −x<sup>2</sup> − 2ax − a（x＜0）；e<sup>x</sup> + ln(x + 1)（x≥0）",
+  "problem": "2024 新高考Ⅰ卷第6题：已知函数 f(x)=−x²−2ax−a（x＜0），f(x)=eˣ+ln(x+1)（x≥0）在 R 上单调递增，则 a 的取值范围是（　）。A. (−∞,0]；B. [−1,0]；C. [−1,1]；D. [0,+∞)。",
+  "source": "原题：deekur/gaokaomath，2024新高考1，第6题，PDF第1页；提交 d5f0d0f66daa92051586b0850ecb1f3c0b14603f。课件为教学改编，来源许可见Skill案例SOURCES.md。",
+  "teacher": "本课的重点是常见错误“只查每一段的导数，漏掉跨段比较”。第四步先请学生把 a 调到 −2 找反例，再把跨段比较压缩成 −a 与 f(0)=1 的比较。图中空心蓝点 (0,−a) 是左段的界限，不属于图像。",
+  "teaching": {
+    "purpose": "worked-example",
+    "objective": "分段函数在 R 上单调递增，要同时检查两段内部的增减和跨段的函数值比较。",
+    "prerequisites": "单调递增的定义；用导数正负判断区间内的增减；二次函数的图像。",
+    "scope": "完整回答原题，答案 B。拖动 a 用于观察反例与临界位置，范围由推理确定。"
+  },
+  "prep": {
+    "position": "分段函数单调性的典型题，适合导数应用或函数性质复习课。",
+    "examPoints": "单调性的定义；导数判断单调性；分段函数在分段点处的衔接。",
+    "minutes": 15,
+    "breakthrough": "单调递增要求“任意 x₁<x₂ 都有 f(x₁)<f(x₂)”，跨段的组合压缩成左段上界 −a 与右段最小值 f(0)=1 的比较。",
+    "thinking": [
+      { "ask": "两段各自递增，f 就在 R 上递增吗？", "expect": "不一定，还要检查 x₁<0≤x₂ 的跨段组合。" },
+      { "ask": "跨段组合有无穷多对，怎样只比较两个数？", "expect": "比较左段函数值的最高界限 −a 和右段的最小值 f(0)=1。" },
+      { "ask": "a=−1 时左段能取到 1 吗？", "expect": "不能，左段函数值严格小于 −a=1，所以端点可以取。" }
+    ],
+    "errors": [
+      { "error": "只算两段导数，得出 a≤0，选 A", "cause": "漏掉跨段比较", "remedy": "取 a=−2，在左段找出函数值大于 f(0)=1 的点。" },
+      { "error": "要求 −a<1，把 a=−1 排除", "cause": "混淆左段的界限与左段能取到的值", "remedy": "a=−1 时左段每个值都小于 1，跨段仍是严格的小于号。" }
+    ],
+    "method": "分段函数单调：各段内部单调 + 分段点处左段的上界（或下界）与右段起点比较，两者缺一不可。",
+    "variants": [
+      { "problem": "f(x)=−x²+2ax（x<1），f(x)=ln x+1（x≥1）在 R 上单调递增，求 a 的范围。", "change": "分段点改为 1，右段改为 ln x+1", "answer": "a≥1 且 −1+2a≤1，即 a=1。" }
+    ],
+    "board": "左段：f′=−2x−2a>0 对 x<0 恒成立 ⟺ a≤0；右段：恒增，f(0)=1；跨段：−a≤1 ⟺ a≥−1。合并 a∈[−1,0]，选 B。"
+  },
+  "scenes": [
+    {
+      "module": "function-graph",
+      "model": {
+        "param": "a",
+        "objects": [
+          { "id": "L", "type": "piecewise", "pieces": [{ "expr": "-x^2-2*a*x-a", "from": -2.2, "to": 0, "right": "open" }], "label": "x＜0 的一段", "labelAt": -1.6 },
+          { "id": "R", "type": "piecewise", "pieces": [{ "expr": "exp(x)+ln(x+1)", "from": 0, "to": 2.2, "left": "closed" }], "label": "x≥0 的一段", "tone": "accent", "labelAt": 0.75 },
+          { "id": "split", "type": "vline", "x": "0" },
+          { "id": "top", "type": "keypoint", "on": "L", "x": "-a", "y": "a^2-a", "kind": "max", "optional": true, "label": "左段最高点" },
+          { "id": "f0", "type": "keypoint", "on": "R", "x": "0", "y": "1", "label": "f(0)=1", "tone": "accent" },
+          { "id": "one", "type": "hline", "y": "1", "label": "y=1", "tone": "muted", "dash": true },
+          { "id": "cross", "type": "intersections", "of": ["L", "one"], "tone": "aux" }
+        ],
+        "checks": [
+          { "at": -2, "expect": { "cross.count": 1 } },
+          { "at": -1, "expect": { "cross.count": 0 } },
+          { "at": -0.5, "expect": { "cross.count": 0 } }
+        ]
+      },
+      "view": { "xMin": -2, "xMax": 2, "yMin": -2, "yMax": 3, "tick": 1, "title": "分段函数在 x=0 附近的图像" },
+      "control": { "label": "参数 a", "min": -2, "max": 1, "step": 0.1, "initial": -0.5, "stops": [-2, -1, 0, 0.5] },
+      "steps": [
+        {
+          "title": "“在 R 上单调递增”要求什么？",
+          "tab": "题意",
+          "body": "f(x) 分两段：x＜0 时 f(x)=−x²−2ax−a，x≥0 时 f(x)=eˣ+ln(x+1)。在 R 上单调递增，按定义是：任意取 x₁＜x₂，都有 f(x₁)＜f(x₂)。“任意取”既包括两点同在一段，也包括 x₁ 取负数、x₂ 取 0 或正数的跨段情形。蓝色是 x＜0 的一段，橙色是 x≥0 的一段，灰色虚线是分段点 x=0。",
+          "formula": "任意 x₁＜x₂，都有 f(x₁)＜f(x₂)",
+          "question": "题目中的函数在 x=0 的左右两侧分别由哪个表达式给出？",
+          "layers": ["L", "R", "split"],
+          "interactive": false
+        },
+        {
+          "title": "当 x＜0 时，a 需要满足什么条件？",
+          "tab": "负数区间",
+          "body": "左段导数 f′(x)=−2x−2a。若 a≤0，每个 x＜0 都有 −2x＞0、−2a≥0，导数恒正，左段递增。若 a＞0，在 (−a,0) 内 f′(x)＜0，左段先升后降，最高点在 x=−a 处（图中青绿色点），不符合题意。当前 a={{a}}。",
+          "formula": "左段单调递增 ⟺ a≤0",
+          "question": "把 a 拖到 0.5：左段靠近 0 的部分是上升还是下降？最高点的横坐标与 a 有什么关系？",
+          "layers": ["L", "R", "split", "top"],
+          "interactive": true
+        },
+        {
+          "title": "当 x≥0 时，函数是否单调递增？",
+          "tab": "非负区间",
+          "body": "右段导数 f′(x)=eˣ+1/(x+1)，两项都大于 0，导数恒正。表达式在 x=0 处连续，所以右段在 [0,+∞) 上单调递增，最小值是 f(0)=e⁰+ln 1=1。这一段不含 a，对 a 没有限制。",
+          "formula": "f′(x)=eˣ+1/(x+1)＞0，f(0)=1",
+          "question": "这一段的最小值是多少？在哪个点取得？",
+          "layers": ["L", "R", "split", "f0"],
+          "interactive": false
+        },
+        {
+          "title": "两段各自递增，为什么还不能下结论？",
+          "tab": "反例",
+          "body": "两段各自递增，只保证“两点同在一段”的组合。跨段组合还没检查：如果左段有点高于 f(0)=1，就出现 x₁＜0≤x₂ 却 f(x₁)＞f(x₂)。紫色点是左段与 y=1 的交点，当前 a={{a}} 时有 {{cross.count}} 个。",
+          "formula": "要检查：x₁＜0≤x₂ 时 f(x₁)＜f(x₂)",
+          "question": "选择 a=−2：在图上找出一个 x₁＜0，使它的函数值大于 f(0)=1。",
+          "layers": ["L", "R", "split", "f0", "one", "cross"],
+          "interactive": true
+        },
+        {
+          "title": "跨段的比较怎样化成两个数的比较？",
+          "tab": "两侧比较",
+          "body": "在 a≤0 时，左段递增，函数值都小于它在 0 左侧的界限 −a，并且能任意接近 −a；右段的最小值是 f(0)=1。所以任取 x₁＜0≤x₂，都有 f(x₁)＜−a 且 f(x₂)≥1。图中左段在 x=0 处的空心点就是 (0,−a)，它不属于图像；当前 −a 对应 a={{a}}。",
+          "formula": "a≤0 时：f(x₁)＜−a，f(x₂)≥1",
+          "question": "当前空心蓝点 (0,−a) 和实心橙点 (0,1) 谁高？",
+          "layers": ["L", "R", "split", "f0", "one"],
+          "interactive": true
+        },
+        {
+          "title": "比较 −a 与 1，怎样得到对 a 的要求？",
+          "tab": "双向推理",
+          "body": "若 −a≤1，即 a≥−1，则 f(x₁)＜−a≤1≤f(x₂)，所有跨段组合都满足定义。若 −a＞1，即 a＜−1，左段函数值能任意接近 −a，就能取到 x₁＜0 使 f(x₁)＞1=f(0)，取 x₂=0 即违反定义。当前 a={{a}}，左段与 y=1 有 {{cross.count}} 个交点。",
+          "formula": "跨段全部满足 ⟺ −a≤1 ⟺ a≥−1",
+          "question": "把 a 从 −0.5 拖到 −1.5：左段从虚线下方变到上方，发生在哪个 a 值？",
+          "layers": ["L", "R", "split", "f0", "one", "cross"],
+          "interactive": true
+        },
+        {
+          "title": "合并条件并检查端点",
+          "tab": "结论",
+          "body": "左段递增要求 a≤0；右段没有限制；跨段要求 a≥−1。端点可以取：a=−1 时左段每个值都严格小于 −a=1=f(0)；a=0 时左段为 −x²，在 x＜0 上递增，且 −a=0＜1。所以 a∈[−1,0]，选 B。",
+          "formula": "a∈[−1,0]，选 B",
+          "question": "a=−1 时左段的函数值能不能等于 1？两个端点为什么可以取等号？",
+          "layers": ["L", "R", "split", "f0", "one"],
+          "interactive": false
+        }
+      ]
+    }
+  ]
+}

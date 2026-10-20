@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "title": "过原点作曲线 y=ln x 的切线",
+  "equation": "y = ln x",
+  "problem": "过原点作曲线 y=ln x 的切线，求切线方程。",
+  "source": "模板：动点切线与过定点条件。自编例题，复制后替换为原题。",
+  "teacher": "先设切点 P(t,ln t)，写出切线方程，再代入原点。拖动 P 观察切线何时经过原点；精确值 t=e 由方程给出，按钮只能停在近似位置。",
+  "teaching": {
+    "purpose": "worked-example",
+    "objective": "掌握“设切点—写切线—代入已知点”的求切线方法。",
+    "prerequisites": "导数的几何意义；直线的点斜式方程。",
+    "scope": "只处理过原点的切线；t=e 由代数求得，图中按钮 t=2.7 只是近似位置。"
+  },
+  "scenes": [
+    {
+      "module": "function-graph",
+      "model": {
+        "param": "t",
+        "objects": [
+          { "id": "f", "type": "curve", "expr": "ln(x)", "domain": [[0.05, 6.5]], "label": "y=ln x", "labelAt": 5.2 },
+          { "id": "P", "type": "point", "on": "f", "x": "t", "label": "P" },
+          { "id": "tan", "type": "tangent", "of": "f", "at": "t", "label": "切线" }
+        ],
+        "checks": [
+          { "at": "e", "expect": { "tan.slope": "1/e", "P.y": 1 } },
+          { "at": 1, "expect": { "tan.slope": 1, "P.y": 0 } }
+        ]
+      },
+      "view": { "xMin": -1, "xMax": 6, "yMin": -3, "yMax": 3, "tick": 1, "title": "曲线 y=ln x 及其切线" },
+      "control": { "type": "drag", "label": "切点横坐标 t", "min": 0.5, "max": 5, "step": 0.1, "initial": 1, "stops": [1, 2.7, 4] },
+      "steps": [
+        {
+          "title": "设切点，写切线",
+          "tab": "设点",
+          "body": "设切点 P(t,ln t)，t>0。y′=1/x，所以切线斜率是 1/t，切线方程为 y−ln t=(1/t)(x−t)。",
+          "formula": "y−ln t=(1/t)(x−t)",
+          "question": "切线经过原点，要满足什么等式？",
+          "layers": ["f", "P", "tan"],
+          "interactive": false
+        },
+        {
+          "title": "拖动切点，观察切线",
+          "tab": "观察",
+          "body": "当前 t={{t}}，切点纵坐标 {{P.y}}，切线斜率 {{tan.slope}}。拖动 P，看切线何时经过原点。",
+          "formula": "斜率 k={{tan.slope}}",
+          "question": "t 变大时，切线与 y 轴的交点怎样移动？",
+          "layers": ["f", "P", "tan"],
+          "interactive": true
+        },
+        {
+          "title": "代入原点求出切点",
+          "tab": "求解",
+          "body": "把 (0,0) 代入切线方程：0−ln t=(1/t)(0−t)，得 ln t=1，t=e。切线为 y=(1/e)x。",
+          "formula": "ln t=1 ⇒ t=e，切线 y=x/e",
+          "question": "为什么必须先设切点，而不能直接用原点求斜率？",
+          "layers": ["f", "P", "tan"],
+          "interactive": false
+        }
+      ]
+    }
+  ]
+}

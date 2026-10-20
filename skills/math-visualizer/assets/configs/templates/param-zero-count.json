@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "title": "方程 x³−3x=a 有几个实数解",
+  "equation": "x<sup>3</sup> − 3x = a",
+  "problem": "讨论关于 x 的方程 x³−3x=a 的实数解个数。",
+  "source": "模板：参变分离后数交点个数。自编例题，复制后替换为原题。",
+  "teacher": "先让学生把方程看成曲线 y=x³−3x 与水平线 y=a 的交点问题，再用极大值、极小值划分 a 的范围。拖动只用来观察，分类结论由极值给出。",
+  "teaching": {
+    "purpose": "worked-example",
+    "objective": "把方程解的个数转化为曲线与水平线的交点个数，用极值划分参数范围。",
+    "prerequisites": "导数与极值；函数图像与方程的解的关系。",
+    "scope": "讨论 a 取全体实数时解的个数；图像观察只覆盖滑块范围，结论由极值分类给出。"
+  },
+  "scenes": [
+    {
+      "module": "function-graph",
+      "model": {
+        "param": "a",
+        "objects": [
+          { "id": "f", "type": "curve", "expr": "x^3-3*x", "domain": [[-3.2, 3.2]], "label": "y=x³−3x", "labelAt": 2.2 },
+          { "id": "level", "type": "hline", "y": "a", "label": "y=a" },
+          { "id": "cross", "type": "intersections", "of": ["f", "level"] },
+          { "id": "max", "type": "keypoint", "on": "f", "x": "-1", "y": "2", "kind": "max", "label": "极大值 2" },
+          { "id": "min", "type": "keypoint", "on": "f", "x": "1", "y": "-2", "kind": "min", "label": "极小值 −2" }
+        ],
+        "checks": [
+          { "at": 3, "expect": { "cross.count": 1 } },
+          { "at": 2, "expect": { "cross.count": 2 } },
+          { "at": 0, "expect": { "cross.count": 3 } },
+          { "at": -2, "expect": { "cross.count": 2 } }
+        ]
+      },
+      "view": { "xMin": -3, "xMax": 3, "yMin": -4, "yMax": 4, "tick": 1, "title": "曲线 y=x³−3x 与水平线 y=a" },
+      "control": { "type": "drag", "label": "参数 a", "min": -4, "max": 4, "step": 0.5, "initial": 0, "stops": [-2, 0, 2] },
+      "steps": [
+        {
+          "title": "把方程的解看成交点",
+          "tab": "转化",
+          "body": "方程 x³−3x=a 的每个实数解 x，都对应曲线 y=x³−3x 与水平线 y=a 的一个交点的横坐标。",
+          "formula": "解的个数 = 交点个数",
+          "question": "水平线上下移动时，交点个数会在哪里发生变化？",
+          "layers": ["f", "level"],
+          "interactive": true
+        },
+        {
+          "title": "观察交点个数",
+          "tab": "观察",
+          "body": "当前 a={{a}}，水平线与曲线有 {{cross.count}} 个交点。用下方按钮到达关键位置。",
+          "formula": "交点个数：{{cross.count}}",
+          "question": "交点个数在哪两个高度发生变化？",
+          "layers": ["f", "level", "cross"],
+          "interactive": true
+        },
+        {
+          "title": "用极值划分 a 的范围",
+          "tab": "结论",
+          "body": "f′(x)=3x²−3，极大值 f(−1)=2，极小值 f(1)=−2。a>2 或 a<−2 时 1 个解；a=±2 时 2 个解；−2<a<2 时 3 个解。",
+          "formula": "f(−1)=2，f(1)=−2",
+          "question": "为什么 a=2 时只有 2 个解？",
+          "layers": ["f", "level", "cross", "max", "min"],
+          "interactive": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,554 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>2026 第15题 · 平行线的距离</title><style>
+/* 课堂讲解共享样式 · v2「课堂白板」
+   设计意图：给投影屏和教室后排看的数学课件，不是网页杂志。
+   - 整屏铺满（100dvh），图形尽量大；字号随屏宽缩放，老师可再用 A−/A+ 调整（--fs）。
+   - 中文界面，不用装饰性英文标签；楷体只用于"老师的提问"，对应教科书里的旁注习惯。
+   - 颜色克制：界面只有墨色、灰阶和一种黑板绿；图里的蓝/橙/绿保留给数学对象。
+   兼容：保留旧版全部类名与 id 钩子（header .intro .stage .visual .explanation .formula .note
+   .parameter-bar .range-wrap .stops footer .steps .navigation .cards .number table 等），
+   手写页、脚本壳页与配置页共用本文件。 */
+:root {
+  color-scheme: light;
+  --bg: #e9ecea;
+  --surface: #ffffff;
+  --sunk: #f4f6f5;
+  --ink: #17212b;
+  --body: #26323d;
+  --muted: #5c6873;
+  --rule: #d5dbd8;
+  --board: #1f4a3d;
+  --board-ink: #f3f1e7;
+  --board-dim: #a9bfb6;
+  --ask: #8a3b12;
+  --blue: #2b56c6;
+  --orange: #c2410c;
+  --green: #0f6256;
+  --primary: var(--blue); --compare: var(--orange); --relation: var(--green);
+  --sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", system-ui, sans-serif;
+  --kai: "KaiTi", "STKaiti", "Kaiti SC", "楷体", "AR PL UKai CN", serif;
+  --math: "Cambria Math", "STIX Two Math", "Times New Roman", "Songti SC", "SimSun", serif;
+  --fs: 1;
+  font-size: calc(var(--fs) * clamp(16px, 0.55vw + 10px, 23px));
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); }
+
+/* ---------- 整屏骨架 ---------- */
+main {
+  min-height: 100vh; min-height: 100dvh;
+  height: 100vh; height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(22rem, 0.9fr);
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "head  head"
+    "notes notes"
+    "intro intro"
+    "task  task"
+    "fig   text"
+    "ctrl  text"
+    "foot  foot";
+  background: var(--surface);
+}
+main > header { grid-area: head; }
+main > #notes { grid-area: notes; }
+main > .intro { grid-area: intro; }
+main > .task { grid-area: task; }
+.stage:not(.without-visual) { display: contents; }
+.stage:not(.without-visual) > .visual { grid-area: fig; }
+.stage:not(.without-visual) > .explanation { grid-area: text; }
+main > .parameter-bar { grid-area: ctrl; }
+main > footer { grid-area: foot; }
+.stage.without-visual { grid-column: 1 / -1; grid-row: 5 / 7; }
+
+/* ---------- 控件 ---------- */
+button, input, select { font: inherit; }
+button {
+  color: var(--ink); background: var(--surface); cursor: pointer;
+  border: 1px solid var(--rule); border-radius: 6px;
+  min-height: 2.2rem; padding: .3rem .9rem;
+  font-size: .82rem; font-weight: 600; line-height: 1.2;
+}
+button:hover:not(:disabled) { border-color: var(--ink); }
+button:focus-visible, input:focus-visible, [role="slider"]:focus-visible, a:focus-visible {
+  outline: 3px solid #3f7cf0; outline-offset: 2px;
+}
+button:disabled { opacity: .35; cursor: default; }
+button.primary {
+  background: var(--board); border-color: var(--board); color: var(--board-ink);
+  min-width: 7.5rem; font-size: .92rem;
+}
+button.primary:hover:not(:disabled) { background: #163a30; border-color: #163a30; }
+button.quiet { background: transparent; border-color: transparent; color: var(--muted); }
+button.quiet:hover:not(:disabled) { color: var(--ink); border-color: var(--rule); }
+input[type="range"] { accent-color: var(--orange); cursor: pointer; margin: 0; height: 1.6rem; }
+a { color: var(--blue); }
+
+/* ---------- 顶栏：只放身份与工具 ---------- */
+header {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: .45rem 1.4rem; min-height: 2.9rem;
+  border-bottom: 1px solid var(--rule); background: var(--surface);
+  font-size: .8rem; color: var(--muted);
+}
+.identity { display: flex; align-items: center; gap: .55rem; min-width: 0; }
+.mark {
+  width: 1.5rem; height: 1.5rem; flex: none; border-radius: 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--board); color: var(--board-ink); font-size: 0;
+}
+.mark::after { content: "数"; font: 700 .78rem/1 var(--sans); }
+.edition {
+  padding: .1rem .55rem; border-radius: 999px;
+  background: var(--sunk); color: var(--body); font-weight: 600; white-space: nowrap;
+}
+.edition:empty { display: none; }
+.tools { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; justify-content: flex-end; }
+header button { min-height: 2rem; padding: .2rem .75rem; font-size: .76rem; }
+header button[aria-expanded="true"], header button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.zoom { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.zoom button { border: 0; border-radius: 0; min-width: 2.2rem; padding: .2rem .45rem; }
+.zoom button + button { border-left: 1px solid var(--rule); }
+
+#notes {
+  margin: 0; padding: .9rem 1.6rem; background: var(--sunk); border-bottom: 1px solid var(--rule);
+  font-size: .86rem; line-height: 1.7; color: var(--body);
+}
+#notes p { margin: .25rem 0; max-width: 60rem; }
+.teaching-summary { margin: .5rem 0; padding: .55rem .9rem; background: var(--surface); border-radius: 8px; }
+.teaching-summary p { margin: .15rem 0; }
+#purpose { font-weight: 700; color: var(--board); }
+summary { cursor: pointer; font-weight: 600; }
+
+/* ---------- 题头：课题 + 核心关系 ---------- */
+.intro {
+  display: flex; align-items: center; justify-content: space-between; gap: .6rem 2rem; flex-wrap: wrap;
+  padding: .85rem 1.6rem .7rem; background: var(--surface);
+}
+.intro > div:first-child { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap; min-width: 0; }
+.eyebrow {
+  margin: 0; flex: none;
+  padding: .12rem .6rem; border-radius: 999px;
+  background: #e3ece8; color: var(--board);
+  font-size: .74rem; font-weight: 700;
+}
+.eyebrow:empty { display: none; }
+h1 { margin: 0; font-size: 1.42rem; line-height: 1.3; font-weight: 750; letter-spacing: .01em; color: var(--ink); }
+.equation {
+  font-family: var(--math); font-size: 1.25rem; font-style: italic; font-weight: 500;
+  color: var(--ink); white-space: nowrap; line-height: 1.2;
+  padding: .3rem .9rem; border-radius: 8px; background: var(--sunk);
+}
+.equation:empty { display: none; }
+.equation sup, .equation sub { font-size: .62em; }
+.orange, .equation .orange { color: var(--orange); }
+
+/* ---------- 题目条：本课任务常驻，学生始终看得到 ---------- */
+.task {
+  display: flex; gap: .9rem; align-items: flex-start;
+  margin: 0 1.6rem .5rem; padding: .55rem .9rem;
+  border-radius: 8px; background: var(--sunk);
+  font-size: .86rem; line-height: 1.6; color: var(--body);
+}
+.task > b {
+  flex: none; padding: .05rem .5rem; border-radius: 4px;
+  background: var(--ink); color: #fff; font-size: .74rem; font-weight: 700; line-height: 1.7;
+}
+.task > span { min-width: 0; }
+
+/* ---------- 图形区：尽量大 ---------- */
+.visual {
+  min-width: 0; min-height: 0; position: relative;
+  display: flex; flex-direction: column;
+  margin: .3rem 0 0 1.6rem;
+  border: 1px solid var(--rule); border-radius: 10px 10px 0 0; border-bottom: 0;
+  background: #fcfbf8; overflow: hidden;
+}
+.visual > #visual, .visual > #drawing, .visual > svg {
+  flex: 1 1 0; min-height: 0; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  padding: .4rem;
+}
+.visual svg { display: block; width: 100%; height: 100%; }
+#visual[role="slider"] { touch-action: none; }
+#visual.drag-y { cursor: ns-resize; }
+#visual.drag-x { cursor: ew-resize; }
+#visual.draggable[data-drag-hint]::after {
+  content: attr(data-drag-hint);
+  position: absolute; top: .7rem; right: .8rem; pointer-events: none;
+  padding: .2rem .6rem; border-radius: 999px;
+  background: var(--ink); color: #fff; font-size: .72rem; font-weight: 600;
+}
+#notice:not(:empty), #caption:not(:empty) {
+  margin: 0; padding: .4rem 1rem;
+  font-size: .74rem; line-height: 1.5; color: var(--muted);
+  border-top: 1px dashed var(--rule);
+}
+#notice:empty, #caption:empty { display: none; }
+.visual > p:not(#notice):not(#caption) { margin: 0; padding: .4rem 1rem; font-size: .74rem; line-height: 1.5; color: var(--muted); border-top: 1px dashed var(--rule); }
+.panel-controls {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem;
+  padding: .55rem 1rem; border-top: 1px solid var(--rule); background: var(--sunk);
+}
+.panel-controls label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .6rem; font-size: .82rem; font-weight: 600; }
+.panel-controls input[type="range"] { min-width: 9rem; }
+
+/* 图下参数条：与图形同一块面板 */
+.parameter-bar {
+  margin: 0 0 0 1.6rem; padding: .55rem 1rem;
+  border: 1px solid var(--rule); border-top: 1px solid var(--rule); border-radius: 0 0 10px 10px;
+  background: var(--sunk);
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem;
+}
+main:has(.parameter-bar[hidden]) .visual,
+main:not(:has(.parameter-bar)) .visual { border-bottom: 1px solid var(--rule); border-radius: 10px; margin-bottom: .6rem; }
+.parameter-bar > .quiet { order: 99; margin-left: auto; font-size: .74rem; }
+.parameter { flex: 1; min-width: 15rem; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+.parameter-heading { display: flex; align-items: center; gap: .5rem; }
+.parameter-heading > span, .parameter-heading label { font-size: .82rem; font-weight: 700; }
+output {
+  font: 700 .95rem/1.3 var(--math); font-variant-numeric: tabular-nums; white-space: nowrap;
+  padding: .05rem .55rem; border-radius: 5px; background: var(--ink); color: #fff;
+}
+.range-wrap { flex: 1; min-width: 9rem; }
+.range-wrap input[type="range"] { width: 100%; }
+.range-labels { display: flex; justify-content: space-between; gap: .5rem; font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stops { display: flex; flex-wrap: wrap; gap: .35rem; }
+.stops button { min-height: 1.9rem; padding: .15rem .6rem; font: 600 .78rem/1.2 var(--math); font-variant-numeric: tabular-nums; }
+.stops button span { font-size: .7rem; color: var(--muted); }
+.stops button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.stops button[aria-pressed="true"] span { color: #d7dde2; }
+
+/* ---------- 讲解区 ---------- */
+.explanation {
+  min-width: 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column;
+  padding: .5rem 1.6rem 1rem 1.6rem;
+  font-size: 1rem; line-height: 1.75; color: var(--body);
+}
+.explanation h2 {
+  margin: .2rem 0 .7rem; font-size: 1.3rem; line-height: 1.4; font-weight: 750; color: var(--ink);
+}
+.explanation p { margin: 0 0 .7rem; }
+.explanation > #body, .explanation > #explanation { max-width: 34em; }
+.formula {
+  margin: .3rem 0 .9rem; padding: .6rem .95rem;
+  border-radius: 8px; background: var(--sunk);
+  font: 500 1.08rem/1.65 var(--math); color: var(--ink);
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+.formula:empty { display: none; }
+.note { font-size: .82rem; line-height: 1.6; color: var(--muted); }
+/* 老师的提问：楷体 + "问"字标，像教科书的旁注 */
+#question:not(:empty), .explanation > .note:last-of-type:not(:empty) {
+  margin: .6rem 0 0; padding: .7rem .95rem .7rem 3.1rem; position: relative;
+  border-radius: 8px; background: #fbf3ec;
+  font-family: var(--kai); font-size: 1.08rem; line-height: 1.6; color: #3d2414;
+}
+#question:not(:empty)::before, .explanation > .note:last-of-type:not(:empty)::before {
+  content: "问"; position: absolute; left: .8rem; top: .72rem;
+  width: 1.55rem; height: 1.55rem; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ask); color: #fff; font: 700 .78rem/1 var(--sans);
+}
+.source { font-size: .76rem; color: var(--muted); overflow-wrap: anywhere; }
+.source a { color: inherit; }
+
+/* 不画图的题：一张居中的解答页 */
+.stage.without-visual { padding: 1rem 1.6rem 1.4rem; display: flex; justify-content: center; align-items: flex-start; }
+.without-visual .explanation, .stage > .explanation:only-child {
+  width: 100%; max-width: 46rem; padding: 1.4rem 1.8rem;
+  border: 1px solid var(--rule); border-radius: 12px; background: var(--surface);
+  font-size: 1.08rem;
+}
+.without-visual #question:not(:empty), .without-visual .explanation > .note:last-of-type:not(:empty) { margin-top: 1rem; }
+
+/* ---------- 底栏：黑板槽 ---------- */
+footer {
+  display: flex; align-items: stretch; justify-content: space-between; gap: 0;
+  margin-top: .6rem; background: var(--board); color: var(--board-ink);
+  min-height: 3.6rem;
+}
+.steps { display: flex; align-items: stretch; flex-wrap: wrap; padding-left: .8rem; counter-reset: none; }
+.steps button {
+  position: relative; border: 0; border-radius: 0; background: transparent;
+  color: var(--board-dim); min-height: 3.6rem; padding: 0 .85rem;
+  display: inline-flex; align-items: center; gap: .4rem;
+  font: 600 .74rem/1 var(--sans); font-variant-numeric: tabular-nums;
+}
+.steps button span { font-size: .84rem; font-weight: 600; }
+.steps button:hover:not(:disabled) { color: var(--board-ink); }
+.steps button::after {
+  content: ""; position: absolute; left: .85rem; right: .85rem; bottom: .55rem; height: 3px; border-radius: 2px;
+  background: transparent;
+}
+.steps button[aria-current="step"] { color: #fff; }
+.steps button[aria-current="step"]::after { background: #f2c94c; }
+.navigation { display: flex; align-items: center; gap: .5rem; padding: .5rem 1.2rem; margin-left: auto; }
+.counter { color: var(--board-dim); font-size: .8rem; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; padding: 0 .3rem; }
+.navigation button { border-color: rgba(243, 241, 231, .3); background: transparent; color: var(--board-ink); }
+.navigation button:hover:not(:disabled) { border-color: var(--board-ink); }
+.navigation button.quiet { border-color: transparent; color: var(--board-dim); }
+.navigation button.primary { background: var(--board-ink); color: var(--board); border-color: var(--board-ink); }
+.navigation button.primary:hover:not(:disabled) { background: #fff; color: var(--board); }
+
+/* ---------- 离散对象：卡片与表格 ---------- */
+.cards { display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: .9rem; padding: 1.6rem 1rem; flex: 1; }
+.number {
+  min-width: 4.4rem; padding: .9rem .8rem; text-align: center;
+  border: 2px solid var(--ink); border-radius: 10px; background: var(--surface);
+  font: 700 1.9rem/1.1 var(--math); font-variant-numeric: tabular-nums;
+}
+.number small { display: block; margin-top: .3rem; font: 500 .74rem/1.2 var(--sans); color: var(--muted); }
+.removed { color: var(--muted); border-color: #aab3b0; border-style: dashed; text-decoration: line-through; background: var(--sunk); }
+.selected { background: var(--ink); color: #fff; }
+.selected small { color: #d7dde2; }
+table { border-collapse: collapse; width: 100%; margin: .6rem 0; background: var(--surface); font-size: .9rem; }
+th, td { padding: .5rem .75rem; border: 1px solid var(--rule); text-align: center; font-variant-numeric: tabular-nums; }
+th { background: var(--sunk); font-weight: 700; }
+caption { padding-bottom: .4rem; text-align: left; font-weight: 700; color: var(--ink); }
+
+/* ---------- 备课卡（只给老师看，课堂投影时收起） ---------- */
+.prep {
+  position: fixed; inset: 0 0 0 auto; z-index: 20; width: min(36rem, 100vw);
+  overflow: auto; padding: 1.2rem 1.5rem 2rem;
+  background: var(--surface); border-left: 1px solid var(--rule);
+  box-shadow: -18px 0 40px -20px rgba(23, 33, 43, .35);
+  font-size: .86rem; line-height: 1.7; color: var(--body);
+}
+.prep-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .6rem; }
+.prep-head h2 { margin: 0; font-size: 1.1rem; color: var(--ink); }
+.prep-head div { display: flex; gap: .4rem; flex: none; }
+.prep-head button { white-space: nowrap; }
+.prep section { padding: .7rem 0; border-top: 1px solid var(--rule); }
+.prep h3 { margin: 0 0 .35rem; font-size: .86rem; color: var(--board); }
+.prep p { margin: .2rem 0; }
+.prep dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: .2rem .9rem; }
+.prep dt { color: var(--muted); }
+.prep dd { margin: 0; }
+.prep ol, .prep ul { margin: .2rem 0; padding-left: 1.3rem; }
+.prep li { margin: .3rem 0; }
+.prep .expect { display: block; color: var(--muted); font-family: var(--kai); font-size: 1.02em; }
+.prep .prep-empty { color: var(--muted); }
+
+/* 打印用的学案/备课卡（屏幕上不显示） */
+.print-only { display: none; }
+
+/* ---------- 窄屏 ---------- */
+@media (max-width: 960px) {
+  main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: "head" "notes" "intro" "task" "fig" "ctrl" "text" "foot";
+    height: auto;
+  }
+  .visual > #visual, .visual > #drawing, .visual > svg { flex: none; }
+  .explanation { overflow: visible; }
+  .stage.without-visual { grid-area: fig; grid-row: auto; grid-column: auto; }
+  .visual, .parameter-bar { margin-left: 1rem; margin-right: 1rem; }
+  .visual svg { height: auto; max-height: none; }
+  .explanation { padding: 1rem; }
+  .intro, header, #notes { padding-left: 1rem; padding-right: 1rem; }
+  .task { margin-left: 1rem; margin-right: 1rem; }
+  #question:not(:empty), .explanation > .note:last-of-type:not(:empty) { margin-top: .6rem; }
+  footer { flex-direction: column; position: sticky; bottom: 0; z-index: 5; }
+  .steps { overflow-x: auto; flex-wrap: nowrap; padding-left: .4rem; }
+  .steps button { min-height: 2.8rem; flex: none; }
+  .steps button::after { bottom: .3rem; }
+  .navigation { width: 100%; justify-content: flex-end; padding: .4rem 1rem .6rem; }
+  .tools .zoom, #fullscreen { display: none; }
+}
+@media (max-width: 520px) {
+  header { flex-wrap: wrap; }
+  .identity > span:nth-child(2) { display: none; }
+  .navigation #restart, .navigation .counter { display: none; }
+}
+
+/* 投影全屏：去掉顶栏工具外的杂项 */
+:fullscreen main, main.presenting { min-height: 100vh; }
+main.presenting > header .identity > span:nth-child(2) { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- 打印：学案或备课卡（A4） ---------- */
+@media print {
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  :root { --fs: 1; font-size: 11pt; background: #fff; }
+  body { background: #fff; }
+  main { display: block; min-height: 0; }
+  main > *:not(.print-only) { display: none !important; }
+  body.print-handout .print-handout, body.print-prep .print-prep { display: block !important; }
+  .prep { position: static; width: auto; box-shadow: none; border: 0; padding: 0; overflow: visible; }
+  .prep-head div { display: none; }
+  .print-sheet h1 { font-size: 16pt; margin: 0 0 4pt; }
+  .print-sheet .sub { color: #555; margin: 0 0 10pt; font-size: 10pt; }
+  .print-sheet .problem { padding: 6pt 8pt; border: 1px solid #999; border-radius: 4pt; margin-bottom: 10pt; line-height: 1.7; }
+  .print-sheet ol { padding-left: 16pt; }
+  .print-sheet li { margin: 0 0 8pt; break-inside: avoid; }
+  .print-sheet li b { display: block; }
+  .print-sheet .ask { font-family: var(--kai); }
+  .print-sheet .blank { height: 34pt; border-bottom: 1px dashed #aaa; margin-top: 4pt; }
+  .print-sheet .figure { break-inside: avoid; text-align: center; margin: 6pt 0 12pt; }
+  .print-sheet .figure svg { width: 70%; height: auto; }
+}
+
+/* ---------- 矮屏（1366×768、1440×900 投影常见分辨率）收紧纵向空间 ---------- */
+@media (min-width: 961px) and (max-height: 820px) {
+  .intro { padding-top: .55rem; padding-bottom: .45rem; }
+  h1 { font-size: 1.25rem; }
+  .task { margin-bottom: .35rem; padding: .4rem .8rem; }
+  .explanation { line-height: 1.65; }
+  .explanation h2 { font-size: 1.18rem; margin-bottom: .5rem; }
+  footer { min-height: 3.1rem; }
+  .steps button { min-height: 3.1rem; }
+  .steps button::after { bottom: .4rem; }
+}
+
+</style><link rel="icon" href="data:,"><body><main><header><div class="identity"><span class="mark" aria-hidden="true">∩</span><span>数学 · 交互讲解</span><span class="edition">2026 全国 1 · 15</span></div><button id="notesToggle" aria-expanded="false" aria-controls="notes">题目与备课提示</button></header><section id="notes" hidden><p><strong>原题</strong>：直三棱柱中，∠ACB=90°，AC=BC；D、E 分别为 AB、AC₁ 的中点。（1）证明 DE ∥ 平面 BCC₁B₁。（2）CC₁=2，DE 与平面 ACC₁A₁ 所成角为 45°，求 DE 到平面 BCC₁B₁ 的距离。</p><p class="source">题目来源：<a href="https://raw.githubusercontent.com/deekur/gaokaomath/d5f0d0f66daa92051586b0850ecb1f3c0b14603f/%E6%99%AE%E9%80%9A%E9%AB%98%E8%80%83/2026/2026%E5%85%A8%E5%9B%BD1%28%E5%B1%B1%E4%B8%9C,%E5%B9%BF%E4%B8%9C,%E6%B9%96%E5%8D%97,%E6%B9%96%E5%8C%97,%E6%B2%B3%E5%8C%97,%E6%B1%9F%E8%8B%8F,%E7%A6%8F%E5%BB%BA,%E6%B5%99%E6%B1%9F,%E6%B2%B3%E5%8D%97,%E6%B1%9F%E8%A5%BF,%E5%AE%89%E5%BE%BD%29.pdf#page=2">原卷 PDF 第 2 页</a>，由 <a href="https://github.com/deekur/gaokaomath">deekur/gaokaomath</a> 整理；交互讲解为本项目制作。</p></section><div class="intro"><div><p class="eyebrow">空间中位线与线面距离</p><h1>先找中位线，再找垂直分量</h1></div><div class="equation">∠ACB = 90°，AC = BC</div></div><section class="stage"><div class="visual"><div id="drawing"></div><p class="note" id="caption"></p><div class="panel-controls"><button id="view">换一个空间视角</button></div></div><div class="explanation"><h2 id="heading"></h2><p id="body"></p><div class="formula" id="formula"></div><p class="note" id="question"></p></div></section><footer><nav class="steps" id="stepsNav" aria-label="讲解步骤"></nav><div class="navigation"><span id="progress" class="counter"></span><button id="reset" class="quiet">重新讲解</button><button id="prev" aria-label="上一步">←</button><button id="next" class="primary">下一步 →</button></div></footer></main><script>
+/* MathViz: dependency-free SVG geometry. All angles/data remain mathematical. */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.MathViz = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const finite = p => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite);
+  const attrs = a => Object.entries(a || {}).map(([k,v]) => ` ${k}="${esc(v)}"`).join('');
+  const vector = {
+    dot(a,b) { if(a.length!==b.length) throw new Error('Vector dimensions differ'); return a.reduce((s,x,i)=>s+x*b[i],0); },
+    cross(a,b) { if(a.length!==3 || b.length!==3) throw new Error('cross requires 3D vectors'); return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]; },
+    norm(a) { return Math.hypot(...a); }
+  };
+  function project3(p, {azimuth=Math.PI/4, elevation=Math.PI/6}={}) {
+    if(p.length!==3 || !p.every(Number.isFinite)) throw new Error('Expected a finite 3D point');
+    const [x,y,z]=p, c=Math.cos(azimuth), s=Math.sin(azimuth), ce=Math.cos(elevation), se=Math.sin(elevation);
+    return [c*x-s*y, -se*(s*x+c*y)+ce*z];
+  }
+  function fraction(n,d=1) {
+    if(!Number.isSafeInteger(n)||!Number.isSafeInteger(d)||d===0) throw new Error('fraction requires safe integer numerator and nonzero denominator');
+    if(d<0) {n=-n;d=-d;}
+    let a=Math.abs(n), b=d;
+    while(b) [a,b]=[b,a%b];
+    n/=a; d/=a;
+    return {n,d,text:d===1?String(n):`${n}/${d}`,value:n/d};
+  }
+  function approximate(value,digits=3) {
+    if(!Number.isFinite(value)) return '未定义';
+    if(!Number.isInteger(digits)||digits<0||digits>15) throw new Error('digits must be 0..15');
+    return `≈ ${Number(value.toFixed(digits))}`;
+  }
+  let counter=0;
+  function createPlot({width=680,height=470,xMin=-5,xMax=5,yMin=-3,yMax=4,padding=38,title='数学图示'}={}) {
+    if(![width,height,xMin,xMax,yMin,yMax,padding].every(Number.isFinite)||width<=2*padding||height<=2*padding||padding<0||xMax<=xMin||yMax<=yMin) throw new Error('Invalid plot bounds');
+    const scale=Math.min((width-2*padding)/(xMax-xMin),(height-2*padding)/(yMax-yMin));
+    const left=(width-scale*(xMax-xMin))/2, top=(height-scale*(yMax-yMin))/2;
+    const right=width-left, bottom=height-top, id=`mv-${++counter}`;
+    const items=[], labelItems=[], occupied=[], collisions=[], labelEvidence=[];
+    const IMPORTANCE=new Set(['essential','supporting','decorative']);
+    const map=p=>[left+(p[0]-xMin)*scale,bottom-(p[1]-yMin)*scale];
+    const inside=p=>finite(p)&&p[0]>=xMin&&p[0]<=xMax&&p[1]>=yMin&&p[1]<=yMax;
+    function add(tag,a,content='') {items.push(`<${tag}${attrs(a)}>${content}</${tag}>`); return api;}
+    function line(a,b,style={}) {if(!finite(a)||!finite(b)) throw new Error('Invalid point');const p=map(a),q=map(b);return add('line',{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:'#315eca','stroke-width':3,'stroke-linecap':'round',...style});}
+    /* id 是绘图状态内稳定唯一的对象标识（不得以标签文本充当）；importance 区分必要/辅助/装饰信息。
+       两者只进入 labelEvidence 诊断，不下传为 SVG 属性。 */
+    function label(p,text,{fontSize=22,dx=12,dy=-12,fixed=false,id=null,importance='supporting',...style}={}) {
+      if(!finite(p)) throw new Error('Invalid label point');
+      if(!IMPORTANCE.has(importance)) throw new Error('importance must be essential, supporting or decorative');
+      if(id!==null&&(typeof id!=='string'||!id.trim())) throw new Error('label id must be a non-empty string');
+      if(id!==null&&labelEvidence.some(e=>e.id===id)) throw new Error(`duplicate label id: ${id}`);
+      // U+2212 is wider than an ASCII hyphen but narrower than a CJK glyph; keep a conservative estimate.
+      const [px,py]=map(p), w=Math.min(width-8,Array.from(String(text)).reduce((s,c)=>s+(c==='−'?0.8:/[\u0000-\u00ff]/.test(c)?0.58:1)*fontSize,0)+6),h=fontSize+6;
+      const overlap=r=>occupied.some(o=>r.x<o.x+o.w&&r.x+r.w>o.x&&r.y<o.y+o.h&&r.y+r.h>o.y);
+      let rect, resolved=false;
+      const candidates=fixed?[[dx,dy-h]]:[[dx,dy-h],[dx,8],[-w-12,dy-h],[-w-12,8],[dx,-2*h-16],[-w/2,2*h]];
+      for(const [ox,oy] of candidates) {
+        rect={x:Math.max(4,Math.min(width-w-4,px+ox)),y:Math.max(4,Math.min(height-h-4,py+oy)),w,h};
+        if(!overlap(rect)){resolved=true;break;}
+      }
+      if(!resolved) { const reason='No collision-free label position; label omitted'; collisions.push({point:p.slice(),text:String(text),reason}); labelEvidence.push({id,text:String(text),importance,anchor:p.slice(),status:'omitted',reason}); return api; }
+      const lx=Math.max(rect.x,Math.min(rect.x+rect.w,px)),ly=Math.max(rect.y,Math.min(rect.y+rect.h,py));
+      const leader=Math.hypot(lx-px,ly-py)>24;
+      occupied.push({...rect,text:String(text),point:p.slice(),fixed,leader,id,importance});
+      labelEvidence.push({id,text:String(text),importance,anchor:p.slice(),status:'rendered',reason:''});
+      if(leader) labelItems.push(`<line${attrs({x1:px,y1:py,x2:lx,y2:ly,stroke:'#69788e','stroke-width':1.5,'data-label-leader':String(text)})}/>`);
+      labelItems.push(`<text${attrs({x:rect.x+3,y:rect.y+fontSize,'font-size':fontSize,'font-weight':600,fill:'#18233a','paint-order':'stroke',stroke:'white','stroke-width':4.5,'stroke-linejoin':'round',...style})}>${esc(text)}</text>`);
+      return api;
+    }
+    function axes({step=1,grid=true,xLabel='x',yLabel='y'}={}) {
+      if(!Number.isFinite(step)||step<=0||(xMax-xMin+yMax-yMin)/step>1000) throw new Error('Invalid axis step');
+      if(typeof xLabel!=='string'||typeof yLabel!=='string') throw new Error('axis labels must be strings');
+      // Coordinate labels are semantic anchors: reserve them before ticks and never relocate them.
+      if(inside([0,0])) label([0,0],'O',{fontSize:20,dx:-23,dy:28,fixed:true});
+      if(xLabel&&yMin<=0&&yMax>=0) label([xMax,0],xLabel,{dx:-14,dy:-12,fixed:true});
+      if(yLabel&&xMin<=0&&xMax>=0) label([0,yMax],yLabel,{dx:12,dy:28,fixed:true});
+      const ticks=(min,max)=>{const first=Math.ceil(min/step),last=Math.floor(max/step);if(!Number.isSafeInteger(first)||!Number.isSafeInteger(last)||last-first>10000)throw new Error('Tick range exceeds numerical precision or density');return Array.from({length:Math.max(0,last-first+1)},(_,i)=>(first+i)*step);};
+      for(const x of ticks(xMin,xMax)) {
+        if(grid) line([x,yMin],[x,yMax],{stroke:'#dce3ed','stroke-width':1});
+        if(Math.abs(x)>1e-9 && yMin<=0&&yMax>=0) label([x,0],String(Number(x.toFixed(8))),{fontSize:20,dx:-6,dy:30,fixed:true,importance:'decorative'});
+      }
+      for(const y of ticks(yMin,yMax)) {
+        if(grid) line([xMin,y],[xMax,y],{stroke:'#dce3ed','stroke-width':1});
+        if(Math.abs(y)>1e-9 && xMin<=0&&xMax>=0) label([0,y],String(Number(y.toFixed(8))),{fontSize:20,dx:10,dy:13,fixed:true,importance:'decorative'});
+      }
+      if(yMin<=0&&yMax>=0) line([xMin,0],[xMax,0],{stroke:'#465168','stroke-width':2,'marker-end':`url(#${id}-axis)`});
+      if(xMin<=0&&xMax>=0) line([0,yMin],[0,yMax],{stroke:'#465168','stroke-width':2,'marker-end':`url(#${id}-axis)`});
+      return api;
+    }
+    function curve(fn,{segments=[[xMin,xMax]],domain=()=>true,samples=400,maxJump=height, ...style}={}) {
+      if(!Number.isInteger(samples)||samples<2||samples>100000||!Number.isFinite(maxJump)||maxJump<=0) throw new Error('Invalid sampling settings');
+      let d='';
+      for(const segment of segments) {
+        if(!finite(segment)||segment[0]>=segment[1]) throw new Error('Expected increasing finite segments');
+        let prev=null;
+        for(let i=0;i<=samples;i++) {
+          const x=segment[0]+(segment[1]-segment[0])*i/samples;
+          let y=NaN; if(domain(x)) y=fn(x);
+          if(!Number.isFinite(y)){prev=null;continue;}
+          const q=map([x,y]);
+          d+=`${!prev||Math.hypot(q[0]-prev[0],q[1]-prev[1])>maxJump?'M':'L'}${q[0].toFixed(3)},${q[1].toFixed(3)} `;
+          prev=q;
+        }
+      }
+      return add('path',{d:d.trim(),fill:'none',stroke:'#315eca','stroke-width':3,'stroke-linecap':'round','stroke-linejoin':'round',...style});
+    }
+    const api={width,height,scale,map,inside,labels:occupied,collisions,labelEvidence,axes,line,label,curve,
+      point(p,{r=5,...style}={}){if(!finite(p))throw new Error('Invalid point'); const q=map(p);items.push(`<ellipse cx="${q[0]}" cy="${q[1]}" rx="${r+5}" ry="${r+5}" fill="rgba(197,61,37,0.16)" stroke="none"/>`);return add('circle',{cx:q[0],cy:q[1],r,fill:'#c53d25',stroke:'white','stroke-width':2.2,'paint-order':'stroke',...style});},
+      circle(p,r,style={}){if(!finite(p)||!Number.isFinite(r)||r<0)throw new Error('Invalid circle');const q=map(p);if(!style.fill||style.fill==='none')items.push(`<ellipse cx="${q[0]}" cy="${q[1]}" rx="${r*scale}" ry="${r*scale}" fill="rgba(49,94,202,0.055)" stroke="none"/>`);return add('circle',{cx:q[0],cy:q[1],r:r*scale,fill:'none',stroke:'#315eca','stroke-width':3,...style});},
+      polygon(points,style={}){if(points.length<3||!points.every(finite))throw new Error('Invalid polygon');return add('polygon',{points:points.map(p=>map(p).join(',')).join(' '),fill:'#315eca22',stroke:'#315eca','stroke-width':3,'stroke-linejoin':'round',...style});},
+      arrow(a,b,style={}){return line(a,b,{'marker-end':`url(#${id}-arrow)`,...style});},
+      /* labelEvidence 以非显示的 metadata 随 SVG 带出，供只拿到 SVG 字符串的审校路径读取；
+         每次调用 svg() 现算现嵌，不累积、不改变学生可见内容。 */
+      svg(){
+        const frame=`<rect x="0" y="0" width="${width}" height="${height}" fill="rgb(252,251,248)"/><rect x="0" y="0" width="${width}" height="${height}" fill="url(#${id}-subgrid)"/>`;
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${id}-title" style="shape-rendering:geometricPrecision;text-rendering:optimizeLegibility"><title id="${id}-title">${esc(title)}</title><defs><clipPath id="${id}-clip"><rect x="${left}" y="${top}" width="${right-left}" height="${bottom-top}"/></clipPath><pattern id="${id}-subgrid" width="24" height="24" patternUnits="userSpaceOnUse"><polyline points="24,0 0,0 0,24" fill="none" stroke="rgba(24,24,27,0.04)" stroke-width="0.75"/><ellipse cx="0" cy="0" rx="0.85" ry="0.85" fill="rgba(24,24,27,0.12)"/></pattern><marker id="${id}-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/></marker><marker id="${id}-axis" viewBox="0 0 10 10" refX="7.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto"><polygon points="0,1.2 9.5,5 0,8.8 2.2,5" fill="context-stroke"/></marker></defs>${frame}<g clip-path="url(#${id}-clip)">${items.join('')}</g><g font-family="Georgia,'Times New Roman','PingFang SC','Microsoft YaHei',serif">${labelItems.join('')}</g><metadata data-mathviz-label-evidence="${esc(JSON.stringify(labelEvidence))}"></metadata></svg>`;
+      }
+    };
+    return api;
+  }
+  return {createPlot,project3,vector,fraction,approximate,escape:esc};
+});
+
+</script><script>
+const state={step:0,view:0};const steps=[
+ ['先看中点属于哪个三角形','直三棱柱中，∠ACB=90°、AC=BC，D、E 分别是 AB、AC₁ 的中点。先证明 DE ∥ 平面 BCC₁B₁；再利用 CC₁=2、DE 与平面 ACC₁A₁ 所成角为 45°，求 DE 到平面 BCC₁B₁ 的距离。D、E 同时落在三角形 ABC₁ 的两条边上，先在这个三角形中寻找中位线。','D 是 AB 中点<br>E 是 AC₁ 中点','预测：三角形 ABC₁ 的第三边在哪里？','中点'],
+ ['中位线连接到目标平面','三角形中位线给出 DE ∥ BC₁。BC₁ 在目标平面内，DE 在平面外，因此得到线面平行。','DE ∥ BC₁ ⊂ 平面 BCC₁B₁<br>DE ∥ 平面 BCC₁B₁','DE 在平面外的理由：它与 BC₁ 平行，且 D 不在目标平面上。','平行'],
+ ['线面角比较垂直分量','取 C 为原点，CA、CB、CC₁ 为坐标轴，设 AC=BC=a>0。平面 ACC₁A₁ 是 y=0。过 D 作平行于 CC₁ 的直线，与过 E 且平行于 CB 的直线交于 F。蓝色 DF 平行于目标角所对的平面，橙色 FE 垂直于这个平面，长度为 a/2；两段合成向量 DE。因此 FE 的长度就是 DE 相对平面 ACC₁A₁ 的垂直分量大小。','DE 向量=(0,−a/2,1)<br>sin 45°=(a/2)/√(a²/4+1)','关键：线面角用“垂直分量 ÷ 向量长度”；投影图里的角不能直接测量。','分量'],
+ ['角度确定边长','由 a>0，角度等式两边平方得 a²/(a²+4)=1/2，所以 a=2。此时才把模型尺寸更新为满足第二问的构型。','a²=4，因此 AC=BC=2','图中橙色线段沿 y 方向，表示 DE 相对 y=0 平面的垂直分量。','边长'],
+ ['平行线到平面的距离，取线上一点','目标平面 BCC₁B₁ 是 x=0。D、E 的 x 坐标都是 a/2，整条 DE 都与这个面保持相同距离。取 D 向 x=0 作垂线即可。','d(DE, 平面 BCC₁B₁)<br>= d(D, x=0) = a/2 = 1','追问：若取 DE 延长线上的一点，距离会改变吗？为什么？','距离']
+];
+stepsNav.innerHTML=steps.map((s,i)=>`<button type='button' data-step='${i}' aria-label='${s[0]}'>${String(i+1).padStart(2,'0')} <span>${s[4]}</span></button>`).join('');
+stepsNav.onclick=e=>{const b=e.target.closest('button[data-step]');if(b){state.step=Number(b.dataset.step);render();}};
+notesToggle.onclick=()=>{const open=notes.hidden;notes.hidden=!open;notesToggle.setAttribute('aria-expanded',String(open));};
+function derive(s){const a=s.step>=3?2:3;return {a,pts:{C:[0,0,0],A:[a,0,0],B:[0,a,0],'C₁':[0,0,2],'A₁':[a,0,2],'B₁':[0,a,2],D:[a/2,a/2,0],E:[a/2,0,1],H:[0,a/2,0],F:[a/2,a/2,1]}};}
+
+function fitViewport(points){const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]);return {xMin:Math.min(...xs)-.18,xMax:Math.max(...xs)+.18,yMin:Math.min(...ys)-.18,yMax:Math.max(...ys)+.18};}
+function render(){const m=derive(state),e=steps[state.step];heading.textContent=e[0];body.textContent=e[1];formula.innerHTML=e[2];question.textContent=e[3];progress.textContent=`${state.step+1} / ${steps.length}`;prev.disabled=!state.step;next.disabled=state.step===4;if(stepsNav.querySelectorAll)for(const b of stepsNav.querySelectorAll('button')){if(+b.dataset.step===state.step)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');}const fixedPoints=[];for(const a of [2,3])for(const q of [[0,0,0],[a,0,0],[0,a,0],[0,0,2],[a,0,2],[0,a,2]])fixedPoints.push(MathViz.project3(q,{azimuth:state.view?3.85:.7,elevation:.5}));const p=MathViz.createPlot({...fitViewport(fixedPoints),height:430,title:'直三棱柱空间正交投影示意'});const project=q=>MathViz.project3(q,{azimuth:state.view?3.85:.7,elevation:.5});const q=k=>project(m.pts[k]);const line=(a,b,style={})=>p.line(q(a),q(b),style);p.polygon(['B','C','C₁','B₁'].map(q),{fill:'#315eca12',stroke:'#a6b0be'});for(const pair of [['A','B'],['B','C'],['C','A'],['A₁','B₁'],['B₁','C₁'],['C₁','A₁'],['A','A₁'],['B','B₁'],['C','C₁']])line(...pair,{stroke:'#a6b0be','stroke-width':2});line('A','C₁',{stroke:'#43516a','stroke-dasharray':'7 5'});line('D','E',{stroke:'#b65320','stroke-width':4});if(state.step<=1){p.polygon(['A','B','C₁'].map(q),{fill:'#b6532012',stroke:'#b65320'});}if(state.step>=1)line('B','C₁',{'stroke-width':4});if(state.step>=2&&state.step<=3){p.polygon(['A','C','C₁','A₁'].map(q),{fill:'#b6532010',stroke:'#b65320','stroke-dasharray':'5 5'});line('D','F',{stroke:'#315eca','stroke-width':4});line('F','E',{stroke:'#b65320','stroke-width':4});}if(state.step===4){line('D','H',{stroke:'#c53d25','stroke-width':5});p.point(q('H')).label(q('H'),'H');}for(const k of ['D','E','A','B','C','C₁','A₁','B₁'])p.point(q(k),{r:3}).label(q(k),k);if(state.step===2||state.step===3)p.label(q('F'),'F');drawing.innerHTML=p.svg();window.lastCollisions=p.collisions;caption.textContent=state.step<3?'全部棱可见的投影示意，尚未按 45° 条件定尺寸；屏幕长度与角度不能用作证明。':'已按推导取 a=2；全部棱可见的投影示意。改变视角不改变真实长度与角度。';}
+prev.onclick=()=>{state.step--;render()};next.onclick=()=>{state.step++;render()};reset.onclick=()=>{state.step=0;render()};view.onclick=()=>{state.view=1-state.view;render()};render();
+</script></body></html>

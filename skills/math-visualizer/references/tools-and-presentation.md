@@ -29,7 +29,7 @@ SymPy 可用于因式分解、导数、精确求解与代数恒等核验；Pytho
 
 正式交付前同样冻结源稿、做独立教学审校并留存实际渲染证据；低层打包器不自动执行审校门禁，不能以打包成功代替通过。使用临时预览试作，通过后再生成正式产物。
 
-内置 bundle.py 只接受无额外属性的经典脚本和 rel=stylesheet 样式；遇到模块、CSS url()/@import、media 等属性会拒绝，避免静默改变语义。Three.js/公式库及其依赖先用专用构建器打包，再验证最终离线资源。lesson.js 是**已冻结**的可选步骤壳（仅作低层组合参考，不再新增能力）：controls 可用 from/to 限定有效步骤，恢复参数保留步骤；接口见[绘图与步骤 API](toolkit-api.md)。新任务优先用配置路径；题目不需要控件时不要仅为复用壳而添加控件。
+内置 bundle.py 只接受无额外属性的经典脚本和 rel=stylesheet 样式；遇到模块、CSS url()/@import、media 等属性会拒绝，避免静默改变语义。Three.js/公式库及其依赖先用专用构建器打包，再验证最终离线资源。lesson.js 是**已冻结**的可选步骤壳（2026-09-19 起不再演进，仅作低层组合参考）：controls 可用 from/to 限定有效步骤，恢复参数保留步骤；完整用法见配套案例。新任务优先用配置路径；题目不需要控件时不要仅为复用壳而添加控件。
 
 **统一课堂壳**：所有页面共用 classroom.css 的页面框架——品牌页眉（∩ 数学 · 交互讲解 + edition + 备课提示开关 #notes-toggle/#notes）、引言区（eyebrow + h1 + 可选衬线公式 .equation）、图解区（.stage/.visual）、参数栏（.parameter-bar：滑块 + stops 代表位置 + 恢复参数）、步骤页脚（footer：.steps 标签页 + 重新讲解 + ←/下一步）。player.js（配置路径）填充步骤标签页、stops 与开关行为；已冻结的 lesson.js 行为相同，仅历史页面使用。steps 的 tab 短名由步骤的 tab 字段提供（缺省只显序号）。新页面按模板的 id 契约提供容器（steps、controls、notes-toggle、notes、footer 等），不要另造页眉、页脚或步骤导航样式。
 

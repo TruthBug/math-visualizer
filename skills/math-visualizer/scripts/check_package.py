@@ -1,6 +1,7 @@
 """Check skill references and portable HTML resource dependencies, not pedagogy.
 
-只在 errors 非空时以非零码退出；可选示例 HTML 内嵌资产的版本差异仅作为警告。
+只在 errors 非空时以非零码退出；assets/examples 的快照漂移按约定是警告（冻结是刻意的），
+真源约定见 references/examples.md。
 """
 import re
 import sys
@@ -28,7 +29,7 @@ for page in root.rglob('*.html'):
     if re.search(r'@import\b|url\s*\((?![\"\x27]?(?:data:|#))|\bimport\s*\(', text, re.I):
         errors.append(f'{page.relative_to(root)}: dependency requires manual inspection')
 
-# 可选示例页内嵌的是构建时的资产；与当前资产不同仅作警告。
+# 分发快照漂移（警告，不是错误）：assets/examples 各页内嵌的是生成当时的资产，允许落后于 assets/。
 # 探针只用来判断"本页确实内嵌了该资产"，命中探针但找不到当前全文即视为滞后；命中不了就不报（不臆测）。
 SNAPSHOT_ASSETS = {
     'classroom.css': r'\.range-wrap\b',
@@ -53,7 +54,7 @@ for page in sorted(examples.rglob('*.html')) if examples.is_dir() else []:
     if stale:
         warnings.append(f'{page.relative_to(root)}: 内嵌快照滞后于 assets/（' + '、'.join(stale) + '）')
 if warnings:
-    warnings.insert(0, 'WARNING: assets/examples 内嵌资产与当前版本不同；如需更新，请修改课件源文件并完成审校与构建，不要直接编辑生成页。')
+    warnings.insert(0, 'WARNING: assets/examples 分发快照漂移（非阻止；分发快照只允许由生成地的同步脚本写入，禁止手改，真源约定见 references/examples.md）')
 
 if errors:
     print('\n'.join(errors))

@@ -6,8 +6,6 @@ review-packets/
 
 # Development and session material
 tests/
-*.test.cjs
-*-test-report.md
 .workbuddy/
 .zcode/
 .playwright-mcp/

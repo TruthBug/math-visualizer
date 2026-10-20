@@ -42,7 +42,7 @@
     const map=p=>[left+(p[0]-xMin)*scale,bottom-(p[1]-yMin)*scale];
     const inside=p=>finite(p)&&p[0]>=xMin&&p[0]<=xMax&&p[1]>=yMin&&p[1]<=yMax;
     function add(tag,a,content='') {items.push(`<${tag}${attrs(a)}>${content}</${tag}>`); return api;}
-    function line(a,b,style={}) {if(!finite(a)||!finite(b)) throw new Error('Invalid point');const p=map(a),q=map(b);return add('line',{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:'#315eca','stroke-width':3,...style});}
+    function line(a,b,style={}) {if(!finite(a)||!finite(b)) throw new Error('Invalid point');const p=map(a),q=map(b);return add('line',{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:'#315eca','stroke-width':3,'stroke-linecap':'round',...style});}
     /* id 是绘图状态内稳定唯一的对象标识（不得以标签文本充当）；importance 区分必要/辅助/装饰信息。
        两者只进入 labelEvidence 诊断，不下传为 SVG 属性。 */
     function label(p,text,{fontSize=22,dx=12,dy=-12,fixed=false,id=null,importance='supporting',...style}={}) {
@@ -65,7 +65,7 @@
       occupied.push({...rect,text:String(text),point:p.slice(),fixed,leader,id,importance});
       labelEvidence.push({id,text:String(text),importance,anchor:p.slice(),status:'rendered',reason:''});
       if(leader) labelItems.push(`<line${attrs({x1:px,y1:py,x2:lx,y2:ly,stroke:'#69788e','stroke-width':1.5,'data-label-leader':String(text)})}/>`);
-      labelItems.push(`<text${attrs({x:rect.x+3,y:rect.y+fontSize,'font-size':fontSize,fill:'#18233a','paint-order':'stroke',stroke:'white','stroke-width':4,'stroke-linejoin':'round',...style})}>${esc(text)}</text>`);
+      labelItems.push(`<text${attrs({x:rect.x+3,y:rect.y+fontSize,'font-size':fontSize,'font-weight':600,fill:'#18233a','paint-order':'stroke',stroke:'white','stroke-width':4.5,'stroke-linejoin':'round',...style})}>${esc(text)}</text>`);
       return api;
     }
     function axes({step=1,grid=true,xLabel='x',yLabel='y'}={}) {
@@ -84,8 +84,8 @@
         if(grid) line([xMin,y],[xMax,y],{stroke:'#dce3ed','stroke-width':1});
         if(Math.abs(y)>1e-9 && xMin<=0&&xMax>=0) label([0,y],String(Number(y.toFixed(8))),{fontSize:20,dx:10,dy:13,fixed:true,importance:'decorative'});
       }
-      if(yMin<=0&&yMax>=0) line([xMin,0],[xMax,0],{stroke:'#465168','stroke-width':2});
-      if(xMin<=0&&xMax>=0) line([0,yMin],[0,yMax],{stroke:'#465168','stroke-width':2});
+      if(yMin<=0&&yMax>=0) line([xMin,0],[xMax,0],{stroke:'#465168','stroke-width':2,'marker-end':`url(#${id}-axis)`});
+      if(xMin<=0&&xMax>=0) line([0,yMin],[0,yMax],{stroke:'#465168','stroke-width':2,'marker-end':`url(#${id}-axis)`});
       return api;
     }
     function curve(fn,{segments=[[xMin,xMax]],domain=()=>true,samples=400,maxJump=height, ...style}={}) {
@@ -103,16 +103,19 @@
           prev=q;
         }
       }
-      return add('path',{d:d.trim(),fill:'none',stroke:'#315eca','stroke-width':3,...style});
+      return add('path',{d:d.trim(),fill:'none',stroke:'#315eca','stroke-width':3,'stroke-linecap':'round','stroke-linejoin':'round',...style});
     }
     const api={width,height,scale,map,inside,labels:occupied,collisions,labelEvidence,axes,line,label,curve,
-      point(p,{r=5,...style}={}){if(!finite(p))throw new Error('Invalid point'); const q=map(p);return add('circle',{cx:q[0],cy:q[1],r,fill:'#c53d25',...style});},
-      circle(p,r,style={}){if(!finite(p)||!Number.isFinite(r)||r<0)throw new Error('Invalid circle');const q=map(p);return add('circle',{cx:q[0],cy:q[1],r:r*scale,fill:'none',stroke:'#315eca','stroke-width':3,...style});},
-      polygon(points,style={}){if(points.length<3||!points.every(finite))throw new Error('Invalid polygon');return add('polygon',{points:points.map(p=>map(p).join(',')).join(' '),fill:'#315eca22',stroke:'#315eca','stroke-width':3,...style});},
+      point(p,{r=5,...style}={}){if(!finite(p))throw new Error('Invalid point'); const q=map(p);items.push(`<ellipse cx="${q[0]}" cy="${q[1]}" rx="${r+5}" ry="${r+5}" fill="rgba(197,61,37,0.16)" stroke="none"/>`);return add('circle',{cx:q[0],cy:q[1],r,fill:'#c53d25',stroke:'white','stroke-width':2.2,'paint-order':'stroke',...style});},
+      circle(p,r,style={}){if(!finite(p)||!Number.isFinite(r)||r<0)throw new Error('Invalid circle');const q=map(p);if(!style.fill||style.fill==='none')items.push(`<ellipse cx="${q[0]}" cy="${q[1]}" rx="${r*scale}" ry="${r*scale}" fill="rgba(49,94,202,0.055)" stroke="none"/>`);return add('circle',{cx:q[0],cy:q[1],r:r*scale,fill:'none',stroke:'#315eca','stroke-width':3,...style});},
+      polygon(points,style={}){if(points.length<3||!points.every(finite))throw new Error('Invalid polygon');return add('polygon',{points:points.map(p=>map(p).join(',')).join(' '),fill:'#315eca22',stroke:'#315eca','stroke-width':3,'stroke-linejoin':'round',...style});},
       arrow(a,b,style={}){return line(a,b,{'marker-end':`url(#${id}-arrow)`,...style});},
       /* labelEvidence 以非显示的 metadata 随 SVG 带出，供只拿到 SVG 字符串的审校路径读取；
          每次调用 svg() 现算现嵌，不累积、不改变学生可见内容。 */
-      svg(){return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${id}-title"><title id="${id}-title">${esc(title)}</title><defs><clipPath id="${id}-clip"><rect x="${left}" y="${top}" width="${right-left}" height="${bottom-top}"/></clipPath><marker id="${id}-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/></marker></defs><g clip-path="url(#${id}-clip)">${items.join('')}</g><g font-family="system-ui,sans-serif">${labelItems.join('')}</g><metadata data-mathviz-label-evidence="${esc(JSON.stringify(labelEvidence))}"></metadata></svg>`;}
+      svg(){
+        const frame=`<rect x="0" y="0" width="${width}" height="${height}" fill="rgb(252,251,248)"/><rect x="0" y="0" width="${width}" height="${height}" fill="url(#${id}-subgrid)"/>`;
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${id}-title" style="shape-rendering:geometricPrecision;text-rendering:optimizeLegibility"><title id="${id}-title">${esc(title)}</title><defs><clipPath id="${id}-clip"><rect x="${left}" y="${top}" width="${right-left}" height="${bottom-top}"/></clipPath><pattern id="${id}-subgrid" width="24" height="24" patternUnits="userSpaceOnUse"><polyline points="24,0 0,0 0,24" fill="none" stroke="rgba(24,24,27,0.04)" stroke-width="0.75"/><ellipse cx="0" cy="0" rx="0.85" ry="0.85" fill="rgba(24,24,27,0.12)"/></pattern><marker id="${id}-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/></marker><marker id="${id}-axis" viewBox="0 0 10 10" refX="7.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto"><polygon points="0,1.2 9.5,5 0,8.8 2.2,5" fill="context-stroke"/></marker></defs>${frame}<g clip-path="url(#${id}-clip)">${items.join('')}</g><g font-family="Georgia,'Times New Roman','PingFang SC','Microsoft YaHei',serif">${labelItems.join('')}</g><metadata data-mathviz-label-evidence="${esc(JSON.stringify(labelEvidence))}"></metadata></svg>`;
+      }
     };
     return api;
   }

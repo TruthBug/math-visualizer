@@ -2,24 +2,27 @@
 
 面向老师备课和课堂讲解。解题和教学表示已明确、准备选择实现路径时再读本文件。已有工程复用优先于逐题重新实现：先匹配能力，再填配置；可组合时组合；确有缺口才扩展。旧案例提供数学/教学参考，不作为复制整个网页代码的默认入口。
 
-**实现边界：** 配置路径（`build_lesson.cjs` + `modules.js` + `player.js`）是**唯一演进路径**，新能力只进入 `modules.js` 的模块契约。脚本壳 `assets/lesson.js` 已**冻结**：仅作低层组合路径的参考壳保留，不再新增能力；能用配置路径完成的任务不要新写 lesson.js 页面。
+**路线状态（2026-09-19 收敛决定）：** 配置路径（`build_lesson.cjs` + `modules.js` + `player.js`）是**唯一演进路径**，新能力只进入 `modules.js` 的模块契约。脚本壳 `assets/lesson.js` 已**冻结**：仅作低层组合路径的参考壳保留，不再新增能力；能用配置路径完成的任务不要新写 lesson.js 页面，历史案例逐步迁移到配置构建。
+
+本轮已测范围见 [复用测试报告](reuse-test-report.md)。回归命令：`node --test scripts/modules.test.cjs scripts/toolkit.test.cjs`。
 
 ## 已落实能力
 
 | 能力 | 状态与入口 | 边界 |
 | --- | --- | --- |
 | 单页核心、步骤、参数、关键位置按钮、图文同步、备课提示 | 内置 `assets/player.js`，由构建器自动嵌入 | 同时展示一个场景，可串联多个场景；不是双画布联动 |
-| 二次函数与水平线 | 内置 `quadratic-level`，模型 y=a(x−h)²+v 与 y=k | a≠0，固定 a/h/v，仅 k 变化；包括开口向下 |
+| 二次函数与水平线 | 内置 `quadratic-level`，模型 y=a(x−h)²+v 与 y=k；支持 `control.type:"drag"` 画布内竖直拖动（`axis:"y"`） | a≠0，固定 a/h/v，仅 k 变化；包括开口向下 |
 | 圆与到直线等距的轨迹 | 内置 `circle-line-distance`，圆心、法向量、常数、距离固定，仅 r 变化；支持 `circle.center`/`original`/`locus.minus`/`locus.plus` 可选对象标注 | 距离必须>0；两条平行轨迹；不是任意圆锥曲线求交 |
+| 通用函数图像 | 内置 `function-graph`：模型里声明曲线、分段函数、水平/竖直线、动点、切线、交点、关键点，步骤 layers 写对象 id；表达式用受限白名单解析；`keypoint`/`checks` 构建时核验。写法见 [函数图像模块](function-graph.md)，模板在 `assets/configs/templates/` | 单参数；只画 y=f(x) 型函数，不含隐函数、参数方程、极坐标；交点与切线斜率是数值结果，精确边界由代数给出 |
 | 抛物线 y=x² 的法线弦构型 | 内置 `parabola-normal-chord`，P(t,t²) 的切线、R(0,−t²)、法线弦 Q、直角三角形与面积函数 S(u)=2u³+u+1/(8u)；一份 derive 服务几何图与面积图两个场景 | 抛物线固定为 y=x²；滑杆范围不得跨越 0（t=0 构型蜕化）；面积图窗口按演示范围设计，一般性结论仍由推导给出 |
 | 点线圆、函数采样、空间投影 | 已有低层 `mathviz.js` | 不等于已封装的教学模块，不能宣称所有空间题可配置生成 |
 | JSXGraph、Three.js、KaTeX/MathJax | 可按需要接入，尚未随包集成 | 不能写入配置假装已支持；先实现适配、构建、测试 |
 
-机器可读的实际模块、版本、参数、图层和动态文本字段由 `MathModules.definitions` 导出；运行 `node scripts/list_capabilities.cjs` 查看。不把文档中“建议使用”的库算作内置能力。
+机器可读的实际模块、版本、参数、图层、动态文本字段、可选标注对象（`annotationObjects`）与画布拖动能力（`drag`）由 `MathModules.definitions` 导出；运行 `node scripts/list_capabilities.cjs` 查看。不把文档中“建议使用”的库算作内置能力。
 
 ## 先选择实现路径
 
-对照已确定的必要对象、关系和操作，按下表选择满足任务的最小实现。路径不以题号或是否有同名模块决定；已有推导、教学设计与核验结果直接沿用，无需另写路由报告。
+对照已确定的必要对象、关系和操作，按下表选择满足任务的最小实现。路径不以题号或是否有同名模块决定；已有推导、教学设计与核验结果直接沿用，无需另写路由报告。选定路径前，先按学习障碍从[配套案例](examples.md)打开最接近的成品，通读其分析文件与实际页面校准讲解与呈现基准，并在新题分析中记录所参考案例与借鉴点；工程复用范围以迁移清单为准。
 
 | 判断 | 路径与最先读取的资料 | 此时不必做 |
 | --- | --- | --- |
@@ -33,7 +36,7 @@
 
 ## 配置路径
 
-1. 先独立解题，按 [交互解释工作流程](explanation-workflow.md) 确定学习问题及必要表示。查看能力清单；分别匹配数学计算与解释呈现，不按题号匹配。能计算答案却缺少关键中间关系的图层，仍属于能力缺口。
+1. 先独立解题，按 [交互解释工作流程](explanation-workflow.md) 确定学习问题及必要表示；按学习障碍打开[配套案例](examples.md)中最接近的成品作基准。查看能力清单；分别匹配数学计算与解释呈现，不按题号匹配。能计算答案却缺少关键中间关系的图层，仍属于能力缺口。
 2. 读取匹配的一个配置，例如[二次函数](../assets/configs/quadratic-level.json)或[高考圆题](../assets/configs/gaokao-2025-q7.json)。覆盖解释任务时只编写题目配置，不复制 player、样式或打包器；不足时按上表判断组合或扩展，不删掉必要讲解。
 3. 试作用 `node scripts/build_lesson.cjs --preview lesson.json preview.html`；源稿冻结并通过独立审校后，才用 `node scripts/build_lesson.cjs lesson.json output.html` 正式构建。两种构建与配置审校打包共用 `lesson_source.cjs` 读取/预检入口，检查模块、模型、范围、图层、文本绑定及边界有限值，并提前报出正文/公式/提问误用 `sup/sub/br` 标签的字段位置，不执行题目表达式。预览不调用正式门禁、不遍历审校采样状态；仍带未审校标记并拒写正式目录。只需检查配置时可用 `node scripts/build_lesson.cjs --check lesson.json`，不生成文件、不建立审校周期；构建已经包含该预检，无需每次额外跑一遍。
 4. 保留 JSON、HTML、`output.html.build.json` 和题目的数学/教学检查记录。构建记录包括核心/模块版本、配置与工具哈希；构建成功不等于数学或视觉验收完成。
@@ -41,7 +44,7 @@
 
 ## 配置契约 v1
 
-顶层：`schemaVersion:1`、`title`、`problem`、`source`、`teacher`、`scenes`。新课件另填 `teaching`，见 [教学意图](teaching-intent.md)。除 equation 外，所有文本按纯文本呈现，不支持 HTML、JavaScript、动态表达式求值。equation 只接受无属性、成对的 sup/sub 标记；其他标记在构建时拒绝，普通文本和比较符转义显示。页首只能放已知关系或设问，不能提前引入解题方法及未定义符号。
+顶层：`schemaVersion:1`、`title`、`problem`、`source`、`teacher`、`scenes`。新课件另填 `teaching`，见 [教学意图](teaching-intent.md)；备课卡填可选的 `prep`，字段与要求见 [说题式拆解](lesson-design.md#写进配置prep-备课卡)。除 equation 外，所有文本按纯文本呈现，不支持 HTML、JavaScript、动态表达式求值。equation 只接受无属性、成对的 sup/sub 标记；其他标记在构建时拒绝，普通文本和比较符转义显示。页首只能放已知关系或设问，不能提前引入解题方法及未定义符号。
 
 每个 scene 包含：
 - `module`：已注册 ID；未知 ID 构建失败，不悄悄回退。
@@ -64,6 +67,8 @@ modelRef允许相对上级目录，以复用相邻资料中的模型；这是本
 只有上表选定扩展时才进入本节。先记录缺少的对象、关系、操作，说明配置和已有工具组合为什么不能满足。优先给已有组件增加合理能力；确有可复用的另一数学关系才新增内置模块。不为一个题号创建专用公共模块。
 
 新增模块按 `assets/modules.js` 的定义接口实现：`version`、`parameter`、`fields`、`layers`、`validate(model)`、`derive(model,value)`、`draw(plot,model,derived,layers)`；若要支持步骤级对象标注，再声明 `objects`/`objectLayer` 与 `anchor(model,derived,objectId,view)`（返回 `{point,visible}`，不可见时不得留悬空标签）；若要支持 `control.type:'drag'`，再声明 `drag:{axis:'x'|'y', fromPoint(model,point)}`——`fromPoint` 把画布内的数学坐标点反解为参数值（如水平线构型即 `pt.y`），player 负责钳位与按 step 吸附。derive 不访问 DOM；图和动态文本使用同一结果。通用 `render` 不解释任何模块语义——图层名、数据字段的含义都只属于模块自己；模块要在页面上给出只与自身相关的诊断（如"有交点在当前视窗外、图上未画出但计算仍按完整模型"），由 `draw` 返回 `{notice:'…'}`，`render` 只透传，`showVisual:false` 或未回报时为无提示。不要把这类判断写进 `render` 的图层名分支。核心播放器和构建器不应因新增模块反复重写。复杂三维不适合现有 SVG 绘制接口时，先设计独立 renderer 适配，不硬塞进二维模块。
+
+`drag` 可附加 `explain(model,point) => string`，在 `fromPoint` 返回非有限值时解释该点的数学拒绝原因；这是模块能力声明，不是配置 JSON 字段。播放器保留原参数，用现有 `role="status"` notice 呈现解释；未声明时使用通用提示。同一解释不重复写入，下一次合法拖动（包括吸附后参数未变）通过 paint 恢复普通提示。视窗中心的 validate 探针仍须返回有限参数；滑杆、键盘与 stops 的值级无定义处理不属于这个通道。省略标签的 notice 最多列出 `collisions[].text` 的前三项及总数，与审校包的 `omittedLabels` 同源。
 
 决定纳入内置库时：至少一个正常配置、一个不同参数配置、临界/退化/非法输入检查；用独立数学方法核验；实际浏览器验证；代码审查；更新模块版本和清单。这是共享能力的验收，不是每道新题的启动清单。任务所必需的扩展继续完成，无需逐次批准；尚未实现或未验证的能力如实说明。共享修改验证通过后集中同步相关安装副本，不在每次课件试作时检查或同步所有副本。
 

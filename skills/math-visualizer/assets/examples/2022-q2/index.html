@@ -1,0 +1,413 @@
+<!doctype html><html lang='zh-CN'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>2022 · 复数与共轭</title><style>
+/* 课堂讲解共享样式 · v2「课堂白板」
+   设计意图：给投影屏和教室后排看的数学课件，不是网页杂志。
+   - 整屏铺满（100dvh），图形尽量大；字号随屏宽缩放，老师可再用 A−/A+ 调整（--fs）。
+   - 中文界面，不用装饰性英文标签；楷体只用于"老师的提问"，对应教科书里的旁注习惯。
+   - 颜色克制：界面只有墨色、灰阶和一种黑板绿；图里的蓝/橙/绿保留给数学对象。
+   兼容：保留旧版全部类名与 id 钩子（header .intro .stage .visual .explanation .formula .note
+   .parameter-bar .range-wrap .stops footer .steps .navigation .cards .number table 等），
+   手写页、脚本壳页与配置页共用本文件。 */
+:root {
+  color-scheme: light;
+  --bg: #e9ecea;
+  --surface: #ffffff;
+  --sunk: #f4f6f5;
+  --ink: #17212b;
+  --body: #26323d;
+  --muted: #5c6873;
+  --rule: #d5dbd8;
+  --board: #1f4a3d;
+  --board-ink: #f3f1e7;
+  --board-dim: #a9bfb6;
+  --ask: #8a3b12;
+  --blue: #2b56c6;
+  --orange: #c2410c;
+  --green: #0f6256;
+  --primary: var(--blue); --compare: var(--orange); --relation: var(--green);
+  --sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", system-ui, sans-serif;
+  --kai: "KaiTi", "STKaiti", "Kaiti SC", "楷体", "AR PL UKai CN", serif;
+  --math: "Cambria Math", "STIX Two Math", "Times New Roman", "Songti SC", "SimSun", serif;
+  --fs: 1;
+  font-size: calc(var(--fs) * clamp(16px, 0.55vw + 10px, 23px));
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); }
+
+/* ---------- 整屏骨架 ---------- */
+main {
+  min-height: 100vh; min-height: 100dvh;
+  height: 100vh; height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(22rem, 0.9fr);
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "head  head"
+    "notes notes"
+    "intro intro"
+    "task  task"
+    "fig   text"
+    "ctrl  text"
+    "foot  foot";
+  background: var(--surface);
+}
+main > header { grid-area: head; }
+main > #notes { grid-area: notes; }
+main > .intro { grid-area: intro; }
+main > .task { grid-area: task; }
+.stage:not(.without-visual) { display: contents; }
+.stage:not(.without-visual) > .visual { grid-area: fig; }
+.stage:not(.without-visual) > .explanation { grid-area: text; }
+main > .parameter-bar { grid-area: ctrl; }
+main > footer { grid-area: foot; }
+.stage.without-visual { grid-column: 1 / -1; grid-row: 5 / 7; }
+
+/* ---------- 控件 ---------- */
+button, input, select { font: inherit; }
+button {
+  color: var(--ink); background: var(--surface); cursor: pointer;
+  border: 1px solid var(--rule); border-radius: 6px;
+  min-height: 2.2rem; padding: .3rem .9rem;
+  font-size: .82rem; font-weight: 600; line-height: 1.2;
+}
+button:hover:not(:disabled) { border-color: var(--ink); }
+button:focus-visible, input:focus-visible, [role="slider"]:focus-visible, a:focus-visible {
+  outline: 3px solid #3f7cf0; outline-offset: 2px;
+}
+button:disabled { opacity: .35; cursor: default; }
+button.primary {
+  background: var(--board); border-color: var(--board); color: var(--board-ink);
+  min-width: 7.5rem; font-size: .92rem;
+}
+button.primary:hover:not(:disabled) { background: #163a30; border-color: #163a30; }
+button.quiet { background: transparent; border-color: transparent; color: var(--muted); }
+button.quiet:hover:not(:disabled) { color: var(--ink); border-color: var(--rule); }
+input[type="range"] { accent-color: var(--orange); cursor: pointer; margin: 0; height: 1.6rem; }
+a { color: var(--blue); }
+
+/* ---------- 顶栏：只放身份与工具 ---------- */
+header {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: .45rem 1.4rem; min-height: 2.9rem;
+  border-bottom: 1px solid var(--rule); background: var(--surface);
+  font-size: .8rem; color: var(--muted);
+}
+.identity { display: flex; align-items: center; gap: .55rem; min-width: 0; }
+.mark {
+  width: 1.5rem; height: 1.5rem; flex: none; border-radius: 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--board); color: var(--board-ink); font-size: 0;
+}
+.mark::after { content: "数"; font: 700 .78rem/1 var(--sans); }
+.edition {
+  padding: .1rem .55rem; border-radius: 999px;
+  background: var(--sunk); color: var(--body); font-weight: 600; white-space: nowrap;
+}
+.edition:empty { display: none; }
+.tools { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; justify-content: flex-end; }
+header button { min-height: 2rem; padding: .2rem .75rem; font-size: .76rem; }
+header button[aria-expanded="true"], header button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.zoom { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.zoom button { border: 0; border-radius: 0; min-width: 2.2rem; padding: .2rem .45rem; }
+.zoom button + button { border-left: 1px solid var(--rule); }
+
+#notes {
+  margin: 0; padding: .9rem 1.6rem; background: var(--sunk); border-bottom: 1px solid var(--rule);
+  font-size: .86rem; line-height: 1.7; color: var(--body);
+}
+#notes p { margin: .25rem 0; max-width: 60rem; }
+.teaching-summary { margin: .5rem 0; padding: .55rem .9rem; background: var(--surface); border-radius: 8px; }
+.teaching-summary p { margin: .15rem 0; }
+#purpose { font-weight: 700; color: var(--board); }
+summary { cursor: pointer; font-weight: 600; }
+
+/* ---------- 题头：课题 + 核心关系 ---------- */
+.intro {
+  display: flex; align-items: center; justify-content: space-between; gap: .6rem 2rem; flex-wrap: wrap;
+  padding: .85rem 1.6rem .7rem; background: var(--surface);
+}
+.intro > div:first-child { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap; min-width: 0; }
+.eyebrow {
+  margin: 0; flex: none;
+  padding: .12rem .6rem; border-radius: 999px;
+  background: #e3ece8; color: var(--board);
+  font-size: .74rem; font-weight: 700;
+}
+.eyebrow:empty { display: none; }
+h1 { margin: 0; font-size: 1.42rem; line-height: 1.3; font-weight: 750; letter-spacing: .01em; color: var(--ink); }
+.equation {
+  font-family: var(--math); font-size: 1.25rem; font-style: italic; font-weight: 500;
+  color: var(--ink); white-space: nowrap; line-height: 1.2;
+  padding: .3rem .9rem; border-radius: 8px; background: var(--sunk);
+}
+.equation:empty { display: none; }
+.equation sup, .equation sub { font-size: .62em; }
+.orange, .equation .orange { color: var(--orange); }
+
+/* ---------- 题目条：本课任务常驻，学生始终看得到 ---------- */
+.task {
+  display: flex; gap: .9rem; align-items: flex-start;
+  margin: 0 1.6rem .5rem; padding: .55rem .9rem;
+  border-radius: 8px; background: var(--sunk);
+  font-size: .86rem; line-height: 1.6; color: var(--body);
+}
+.task > b {
+  flex: none; padding: .05rem .5rem; border-radius: 4px;
+  background: var(--ink); color: #fff; font-size: .74rem; font-weight: 700; line-height: 1.7;
+}
+.task > span { min-width: 0; }
+
+/* ---------- 图形区：尽量大 ---------- */
+.visual {
+  min-width: 0; min-height: 0; position: relative;
+  display: flex; flex-direction: column;
+  margin: .3rem 0 0 1.6rem;
+  border: 1px solid var(--rule); border-radius: 10px 10px 0 0; border-bottom: 0;
+  background: #fcfbf8; overflow: hidden;
+}
+.visual > #visual, .visual > #drawing, .visual > svg {
+  flex: 1 1 0; min-height: 0; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  padding: .4rem;
+}
+.visual svg { display: block; width: 100%; height: 100%; }
+#visual[role="slider"] { touch-action: none; }
+#visual.drag-y { cursor: ns-resize; }
+#visual.drag-x { cursor: ew-resize; }
+#visual.draggable[data-drag-hint]::after {
+  content: attr(data-drag-hint);
+  position: absolute; top: .7rem; right: .8rem; pointer-events: none;
+  padding: .2rem .6rem; border-radius: 999px;
+  background: var(--ink); color: #fff; font-size: .72rem; font-weight: 600;
+}
+#notice:not(:empty), #caption:not(:empty) {
+  margin: 0; padding: .4rem 1rem;
+  font-size: .74rem; line-height: 1.5; color: var(--muted);
+  border-top: 1px dashed var(--rule);
+}
+#notice:empty, #caption:empty { display: none; }
+.visual > p:not(#notice):not(#caption) { margin: 0; padding: .4rem 1rem; font-size: .74rem; line-height: 1.5; color: var(--muted); border-top: 1px dashed var(--rule); }
+.panel-controls {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem;
+  padding: .55rem 1rem; border-top: 1px solid var(--rule); background: var(--sunk);
+}
+.panel-controls label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .6rem; font-size: .82rem; font-weight: 600; }
+.panel-controls input[type="range"] { min-width: 9rem; }
+
+/* 图下参数条：与图形同一块面板 */
+.parameter-bar {
+  margin: 0 0 0 1.6rem; padding: .55rem 1rem;
+  border: 1px solid var(--rule); border-top: 1px solid var(--rule); border-radius: 0 0 10px 10px;
+  background: var(--sunk);
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem;
+}
+main:has(.parameter-bar[hidden]) .visual,
+main:not(:has(.parameter-bar)) .visual { border-bottom: 1px solid var(--rule); border-radius: 10px; margin-bottom: .6rem; }
+.parameter-bar > .quiet { order: 99; margin-left: auto; font-size: .74rem; }
+.parameter { flex: 1; min-width: 15rem; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+.parameter-heading { display: flex; align-items: center; gap: .5rem; }
+.parameter-heading > span, .parameter-heading label { font-size: .82rem; font-weight: 700; }
+output {
+  font: 700 .95rem/1.3 var(--math); font-variant-numeric: tabular-nums; white-space: nowrap;
+  padding: .05rem .55rem; border-radius: 5px; background: var(--ink); color: #fff;
+}
+.range-wrap { flex: 1; min-width: 9rem; }
+.range-wrap input[type="range"] { width: 100%; }
+.range-labels { display: flex; justify-content: space-between; gap: .5rem; font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stops { display: flex; flex-wrap: wrap; gap: .35rem; }
+.stops button { min-height: 1.9rem; padding: .15rem .6rem; font: 600 .78rem/1.2 var(--math); font-variant-numeric: tabular-nums; }
+.stops button span { font-size: .7rem; color: var(--muted); }
+.stops button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.stops button[aria-pressed="true"] span { color: #d7dde2; }
+
+/* ---------- 讲解区 ---------- */
+.explanation {
+  min-width: 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column;
+  padding: .5rem 1.6rem 1rem 1.6rem;
+  font-size: 1rem; line-height: 1.75; color: var(--body);
+}
+.explanation h2 {
+  margin: .2rem 0 .7rem; font-size: 1.3rem; line-height: 1.4; font-weight: 750; color: var(--ink);
+}
+.explanation p { margin: 0 0 .7rem; }
+.explanation > #body, .explanation > #explanation { max-width: 34em; }
+.formula {
+  margin: .3rem 0 .9rem; padding: .6rem .95rem;
+  border-radius: 8px; background: var(--sunk);
+  font: 500 1.08rem/1.65 var(--math); color: var(--ink);
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+.formula:empty { display: none; }
+.note { font-size: .82rem; line-height: 1.6; color: var(--muted); }
+/* 老师的提问：楷体 + "问"字标，像教科书的旁注 */
+#question:not(:empty), .explanation > .note:last-of-type:not(:empty) {
+  margin: .6rem 0 0; padding: .7rem .95rem .7rem 3.1rem; position: relative;
+  border-radius: 8px; background: #fbf3ec;
+  font-family: var(--kai); font-size: 1.08rem; line-height: 1.6; color: #3d2414;
+}
+#question:not(:empty)::before, .explanation > .note:last-of-type:not(:empty)::before {
+  content: "问"; position: absolute; left: .8rem; top: .72rem;
+  width: 1.55rem; height: 1.55rem; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ask); color: #fff; font: 700 .78rem/1 var(--sans);
+}
+.source { font-size: .76rem; color: var(--muted); overflow-wrap: anywhere; }
+.source a { color: inherit; }
+
+/* 不画图的题：一张居中的解答页 */
+.stage.without-visual { padding: 1rem 1.6rem 1.4rem; display: flex; justify-content: center; align-items: flex-start; }
+.without-visual .explanation, .stage > .explanation:only-child {
+  width: 100%; max-width: 46rem; padding: 1.4rem 1.8rem;
+  border: 1px solid var(--rule); border-radius: 12px; background: var(--surface);
+  font-size: 1.08rem;
+}
+.without-visual #question:not(:empty), .without-visual .explanation > .note:last-of-type:not(:empty) { margin-top: 1rem; }
+
+/* ---------- 底栏：黑板槽 ---------- */
+footer {
+  display: flex; align-items: stretch; justify-content: space-between; gap: 0;
+  margin-top: .6rem; background: var(--board); color: var(--board-ink);
+  min-height: 3.6rem;
+}
+.steps { display: flex; align-items: stretch; flex-wrap: wrap; padding-left: .8rem; counter-reset: none; }
+.steps button {
+  position: relative; border: 0; border-radius: 0; background: transparent;
+  color: var(--board-dim); min-height: 3.6rem; padding: 0 .85rem;
+  display: inline-flex; align-items: center; gap: .4rem;
+  font: 600 .74rem/1 var(--sans); font-variant-numeric: tabular-nums;
+}
+.steps button span { font-size: .84rem; font-weight: 600; }
+.steps button:hover:not(:disabled) { color: var(--board-ink); }
+.steps button::after {
+  content: ""; position: absolute; left: .85rem; right: .85rem; bottom: .55rem; height: 3px; border-radius: 2px;
+  background: transparent;
+}
+.steps button[aria-current="step"] { color: #fff; }
+.steps button[aria-current="step"]::after { background: #f2c94c; }
+.navigation { display: flex; align-items: center; gap: .5rem; padding: .5rem 1.2rem; margin-left: auto; }
+.counter { color: var(--board-dim); font-size: .8rem; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; padding: 0 .3rem; }
+.navigation button { border-color: rgba(243, 241, 231, .3); background: transparent; color: var(--board-ink); }
+.navigation button:hover:not(:disabled) { border-color: var(--board-ink); }
+.navigation button.quiet { border-color: transparent; color: var(--board-dim); }
+.navigation button.primary { background: var(--board-ink); color: var(--board); border-color: var(--board-ink); }
+.navigation button.primary:hover:not(:disabled) { background: #fff; color: var(--board); }
+
+/* ---------- 离散对象：卡片与表格 ---------- */
+.cards { display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: .9rem; padding: 1.6rem 1rem; flex: 1; }
+.number {
+  min-width: 4.4rem; padding: .9rem .8rem; text-align: center;
+  border: 2px solid var(--ink); border-radius: 10px; background: var(--surface);
+  font: 700 1.9rem/1.1 var(--math); font-variant-numeric: tabular-nums;
+}
+.number small { display: block; margin-top: .3rem; font: 500 .74rem/1.2 var(--sans); color: var(--muted); }
+.removed { color: var(--muted); border-color: #aab3b0; border-style: dashed; text-decoration: line-through; background: var(--sunk); }
+.selected { background: var(--ink); color: #fff; }
+.selected small { color: #d7dde2; }
+table { border-collapse: collapse; width: 100%; margin: .6rem 0; background: var(--surface); font-size: .9rem; }
+th, td { padding: .5rem .75rem; border: 1px solid var(--rule); text-align: center; font-variant-numeric: tabular-nums; }
+th { background: var(--sunk); font-weight: 700; }
+caption { padding-bottom: .4rem; text-align: left; font-weight: 700; color: var(--ink); }
+
+/* ---------- 备课卡（只给老师看，课堂投影时收起） ---------- */
+.prep {
+  position: fixed; inset: 0 0 0 auto; z-index: 20; width: min(36rem, 100vw);
+  overflow: auto; padding: 1.2rem 1.5rem 2rem;
+  background: var(--surface); border-left: 1px solid var(--rule);
+  box-shadow: -18px 0 40px -20px rgba(23, 33, 43, .35);
+  font-size: .86rem; line-height: 1.7; color: var(--body);
+}
+.prep-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .6rem; }
+.prep-head h2 { margin: 0; font-size: 1.1rem; color: var(--ink); }
+.prep-head div { display: flex; gap: .4rem; flex: none; }
+.prep-head button { white-space: nowrap; }
+.prep section { padding: .7rem 0; border-top: 1px solid var(--rule); }
+.prep h3 { margin: 0 0 .35rem; font-size: .86rem; color: var(--board); }
+.prep p { margin: .2rem 0; }
+.prep dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: .2rem .9rem; }
+.prep dt { color: var(--muted); }
+.prep dd { margin: 0; }
+.prep ol, .prep ul { margin: .2rem 0; padding-left: 1.3rem; }
+.prep li { margin: .3rem 0; }
+.prep .expect { display: block; color: var(--muted); font-family: var(--kai); font-size: 1.02em; }
+.prep .prep-empty { color: var(--muted); }
+
+/* 打印用的学案/备课卡（屏幕上不显示） */
+.print-only { display: none; }
+
+/* ---------- 窄屏 ---------- */
+@media (max-width: 960px) {
+  main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: "head" "notes" "intro" "task" "fig" "ctrl" "text" "foot";
+    height: auto;
+  }
+  .visual > #visual, .visual > #drawing, .visual > svg { flex: none; }
+  .explanation { overflow: visible; }
+  .stage.without-visual { grid-area: fig; grid-row: auto; grid-column: auto; }
+  .visual, .parameter-bar { margin-left: 1rem; margin-right: 1rem; }
+  .visual svg { height: auto; max-height: none; }
+  .explanation { padding: 1rem; }
+  .intro, header, #notes { padding-left: 1rem; padding-right: 1rem; }
+  .task { margin-left: 1rem; margin-right: 1rem; }
+  #question:not(:empty), .explanation > .note:last-of-type:not(:empty) { margin-top: .6rem; }
+  footer { flex-direction: column; position: sticky; bottom: 0; z-index: 5; }
+  .steps { overflow-x: auto; flex-wrap: nowrap; padding-left: .4rem; }
+  .steps button { min-height: 2.8rem; flex: none; }
+  .steps button::after { bottom: .3rem; }
+  .navigation { width: 100%; justify-content: flex-end; padding: .4rem 1rem .6rem; }
+  .tools .zoom, #fullscreen { display: none; }
+}
+@media (max-width: 520px) {
+  header { flex-wrap: wrap; }
+  .identity > span:nth-child(2) { display: none; }
+  .navigation #restart, .navigation .counter { display: none; }
+}
+
+/* 投影全屏：去掉顶栏工具外的杂项 */
+:fullscreen main, main.presenting { min-height: 100vh; }
+main.presenting > header .identity > span:nth-child(2) { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- 打印：学案或备课卡（A4） ---------- */
+@media print {
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  :root { --fs: 1; font-size: 11pt; background: #fff; }
+  body { background: #fff; }
+  main { display: block; min-height: 0; }
+  main > *:not(.print-only) { display: none !important; }
+  body.print-handout .print-handout, body.print-prep .print-prep { display: block !important; }
+  .prep { position: static; width: auto; box-shadow: none; border: 0; padding: 0; overflow: visible; }
+  .prep-head div { display: none; }
+  .print-sheet h1 { font-size: 16pt; margin: 0 0 4pt; }
+  .print-sheet .sub { color: #555; margin: 0 0 10pt; font-size: 10pt; }
+  .print-sheet .problem { padding: 6pt 8pt; border: 1px solid #999; border-radius: 4pt; margin-bottom: 10pt; line-height: 1.7; }
+  .print-sheet ol { padding-left: 16pt; }
+  .print-sheet li { margin: 0 0 8pt; break-inside: avoid; }
+  .print-sheet li b { display: block; }
+  .print-sheet .ask { font-family: var(--kai); }
+  .print-sheet .blank { height: 34pt; border-bottom: 1px dashed #aaa; margin-top: 4pt; }
+  .print-sheet .figure { break-inside: avoid; text-align: center; margin: 6pt 0 12pt; }
+  .print-sheet .figure svg { width: 70%; height: auto; }
+}
+
+/* ---------- 矮屏（1366×768、1440×900 投影常见分辨率）收紧纵向空间 ---------- */
+@media (min-width: 961px) and (max-height: 820px) {
+  .intro { padding-top: .55rem; padding-bottom: .45rem; }
+  h1 { font-size: 1.25rem; }
+  .task { margin-bottom: .35rem; padding: .4rem .8rem; }
+  .explanation { line-height: 1.65; }
+  .explanation h2 { font-size: 1.18rem; margin-bottom: .5rem; }
+  footer { min-height: 3.1rem; }
+  .steps button { min-height: 3.1rem; }
+  .steps button::after { bottom: .4rem; }
+}
+
+</style><link rel='icon' href='data:,'><main><header><div class='identity'><span class='mark' aria-hidden='true'>∩</span><span>数学 · 交互讲解</span><span class='edition'>2022 · 第 2 题</span></div><button id='notes-toggle' aria-expanded='false' aria-controls='notes'>题目与备课提示</button></header><section id='notes' hidden><p><strong>原题</strong>：若 i(1−z)=1，则 z+z̄=？A. −2；B. −1；C. 1；D. 2。</p><p class='source'><a href='https://raw.githubusercontent.com/deekur/gaokaomath/d5f0d0f66daa92051586b0850ecb1f3c0b14603f/%E6%99%AE%E9%80%9A%E9%AB%98%E8%80%83/2022/2022%E6%96%B0%E9%AB%98%E8%80%831%28%E5%B1%B1%E4%B8%9C%2C%E5%B9%BF%E4%B8%9C%2C%E6%B9%96%E5%8D%97%2C%E6%B9%96%E5%8C%97%2C%E6%B2%B3%E5%8C%97%2C%E6%B1%9F%E8%8B%8F%2C%E7%A6%8F%E5%BB%BA%29.pdf'>来源：deekur/gaokaomath，2022，第 2 题，PDF第1页。交互与解答为本次改编。</a></p></section><div class='intro'><div><p class='eyebrow'>结构归纳与直接推导</p><h1>复数与共轭</h1></div><div class='equation'>i(1−z) = 1</div></div><div class='stage without-visual'><section class='explanation'><p>1−z=1/i=−i，所以 z=1+i，z̄=1−i，z+z̄=2，选 D。</p><p class='note'>呈现判断：高中单步复数运算，画复平面没有明显减少理解负担。</p></section></div></main><script>document.getElementById('notes-toggle').addEventListener('click',function(){var n=document.getElementById('notes'),o=n.hidden;n.hidden=!o;this.setAttribute('aria-expanded',String(o));});</script></html>

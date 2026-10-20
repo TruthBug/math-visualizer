@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>同一道题，两种教学任务 · 数学交互讲解对照</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #e5e0d5;
+    --surface: #fbfaf7;
+    --panel: #f3f0e8;
+    --ink: #141619;
+    --muted: #5a606a;
+    --blue: #1e40af;
+    --orange: #c2410c;
+    --green: #0f6256;
+    --line: #d4cfc3;
+    --structural: #18181b;
+    --mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+    --serif: Georgia, "Times New Roman", "STIX Two Math", "Songti SC", serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font: 17.5px/1.68 "Inter", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    color: var(--ink);
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(to right, rgba(24, 24, 27, 0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(24, 24, 27, 0.035) 1px, transparent 1px);
+    background-size: 32px 32px;
+    margin: 0; min-height: 100vh; padding: 20px 24px;
+  }
+  main {
+    max-width: 1360px; margin: 0 auto;
+    background: var(--surface);
+    border: 1.5px solid var(--structural);
+    border-radius: 3px;
+    box-shadow: 0 22px 48px -18px rgba(20, 22, 25, 0.16);
+    overflow: hidden;
+  }
+  header {
+    height: 46px;
+    background: var(--panel);
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
+    padding: 0 26px;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    font-size: 14px; font-weight: 650; letter-spacing: .04em;
+  }
+  .identity { display: flex; align-items: center; gap: 10px; }
+  .mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 2px;
+    background: var(--structural); color: var(--surface);
+    font-size: 15px; font-weight: 700; transform: rotate(180deg); line-height: 1;
+  }
+  .sub {
+    color: var(--ink); background: var(--surface);
+    border: 1px solid #c2bbb0; border-radius: 2px;
+    padding: 2px 10px; margin-left: 6px;
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+  }
+  .meta-right { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+  .hero {
+    display: grid; grid-template-columns: 1.25fr 0.75fr;
+    border-bottom: 1.5px solid var(--structural);
+    background: var(--surface);
+  }
+  .hero-left { padding: 26px 32px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700;
+    letter-spacing: .12em; color: var(--orange); margin: 0 0 8px; text-transform: uppercase;
+  }
+  h1 { font-size: 30px; line-height: 1.25; font-weight: 800; margin: 0 0 10px; letter-spacing: -.01em; color: var(--ink); }
+  .lead { color: var(--muted); margin: 0; font-size: 16.5px; }
+  .hero-model {
+    border-left: 1px solid var(--line);
+    background: #f6f3eb; padding: 22px 32px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .hero-model .label {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    letter-spacing: .12em; color: var(--muted); margin-bottom: 6px;
+  }
+  .hero-model .eq {
+    font-family: var(--serif); font-size: 28px; font-style: italic;
+    font-weight: 600; color: var(--ink); margin-bottom: 6px;
+  }
+  .hero-model .sub-eq { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+  .grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    background: var(--line); gap: 1px;
+  }
+  article {
+    background: var(--surface); padding: 32px 36px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .col-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-bottom: 14px; margin-bottom: 18px;
+    border-bottom: 1px solid #e2ddd2;
+  }
+  .col-num {
+    font-family: var(--serif); font-size: 32px; font-style: italic;
+    font-weight: 700; color: var(--structural); line-height: 1;
+  }
+  .tag {
+    font-family: var(--mono); font-size: 12px; font-weight: 700;
+    padding: 3px 10px; border-radius: 2px; letter-spacing: .04em;
+  }
+  .tag-concept { background: #e9f5f2; color: var(--green); border: 1px solid #b5ddd6; }
+  .tag-worked { background: #edf2fe; color: var(--blue); border: 1px solid #c5d6f7; }
+  h2 { margin: 0 0 10px; font-size: 23px; font-weight: 780; line-height: 1.35; color: var(--ink); }
+  .audience {
+    margin: 0 0 20px; padding: 10px 14px;
+    background: #f5f2ea; border-left: 3px solid var(--structural);
+    font-size: 16px; color: #27272a;
+  }
+  ul {
+    margin: 0 0 28px; padding: 0; list-style: none;
+    counter-reset: item;
+  }
+  li {
+    counter-increment: item;
+    position: relative; padding: 10px 0 10px 36px;
+    border-bottom: 1px dashed #e2ddd2;
+    color: #2f3540; font-size: 16.5px;
+  }
+  li:last-child { border-bottom: 0; }
+  li::before {
+    content: "0" counter(item);
+    position: absolute; left: 0; top: 11px;
+    font-family: var(--mono); font-size: 12.5px; font-weight: 700;
+    color: var(--muted); background: var(--panel);
+    padding: 1px 6px; border-radius: 2px;
+  }
+  a.btn {
+    display: inline-flex; align-items: center; justify-content: space-between;
+    width: 100%; padding: 12px 20px;
+    background: var(--structural); color: var(--surface);
+    text-decoration: none; border-radius: 2px;
+    font-weight: 650; font-size: 16px; letter-spacing: .02em;
+    transition: background .12s;
+  }
+  a.btn:hover { background: var(--blue); }
+  a.btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .architecture-note {
+    background: var(--panel);
+    border-top: 1.5px solid var(--structural);
+    padding: 18px 32px; color: var(--muted); font-size: 15px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .architecture-note strong { color: var(--ink); font-family: var(--mono); font-size: 13px; letter-spacing: .04em; }
+  .architecture-note p { margin: 0; }
+  code {
+    font-family: var(--mono); font-size: .9em;
+    background: var(--surface); border: 1px solid #d4cfc3;
+    padding: 1px 6px; border-radius: 2px; color: var(--ink);
+  }
+  @media (max-width: 860px) {
+    body { padding: 10px; }
+    .hero, .grid { grid-template-columns: 1fr; }
+    .hero-model { border-left: 0; border-top: 1px solid var(--line); }
+  }
+</style>
+<main>
+  <header>
+    <div class="identity">
+      <span class="mark" aria-hidden="true">∩</span>
+      <span>数学 · 交互讲解</span>
+      <span class="sub">PEDAGOGICAL COMPARISON // 教学意图对照</span>
+    </div>
+    <span class="meta-right">SHARED MODEL ARCHITECTURE</span>
+  </header>
+  <div class="hero">
+    <div class="hero-left">
+      <p class="eyebrow">COMPARATIVE DIDACTICS · 同源模型分流设计</p>
+      <h1>同一道真题，两种教学任务</h1>
+      <p class="lead">共同素材：2025 全国 1 卷第 7 题（圆上到已知直线距离为 1 的点恰有两个，讨论半径范围）。</p>
+    </div>
+    <div class="hero-model">
+      <span class="label">SHARED MATHEMATICAL MODEL · 共享模型参数</span>
+      <div class="eq">x<sup>2</sup> + (y + 2)<sup>2</sup> = r<sup>2</sup></div>
+      <span class="sub-eq">SOURCE: circle-2025-model.json · d(P, l) = 1</span>
+    </div>
+  </div>
+  <section class="grid">
+    <article class="card-concept">
+      <div>
+        <div class="col-header">
+          <span class="col-num">01.</span>
+          <span class="tag tag-concept">CONCEPT · 概念解析</span>
+        </div>
+        <h2>先建立位置关系与勾股判据</h2>
+        <p class="audience">面向尚不能解释“为什么比较半径与垂距就能决定交点数量”的学生。</p>
+        <ul>
+          <li>先抽出较近的一条轨迹，局部放大观察垂足 H 与直角三角形 CHP</li>
+          <li>理清 HP² = r² − d² 的符号含义后，再恢复全景应用到第二条轨迹</li>
+          <li>收尾撤掉图形口头追问一般判据，不以公布原题选项答案收尾</li>
+        </ul>
+      </div>
+      <a class="btn" href="concept.html"><span>打开概念解析课件</span><span>ENTER STUDIO →</span></a>
+    </article>
+    <article class="card-worked">
+      <div>
+        <div class="col-header">
+          <span class="col-num">02.</span>
+          <span class="tag tag-worked">WORKED EXAMPLE · 原题讲解</span>
+        </div>
+        <h2>完整拆解真题条件与边界分类</h2>
+        <p class="audience">面向已掌握圆与直线位置关系判据、需要完整解决本题的学生。</p>
+        <ul>
+          <li>将“到原直线距离为 1”转化为两侧平行轨迹，区分两个“距离 1”的不同含义</li>
+          <li>计算圆心到两条辅助直线的垂距（1 和 3），以 r=1、r=3 划分五种情形</li>
+          <li>检验相切边界，得出完整开区间结论 (1, 3) 并完成选项判断</li>
+        </ul>
+      </div>
+      <a class="btn" href="worked-example.html"><span>打开原题讲解课件</span><span>ENTER STUDIO →</span></a>
+    </article>
+  </section>
+  <aside class="architecture-note">
+    <p><strong>ARCHITECTURE NOTE // 同源模型，按意图呈现：</strong>两份课件共用同一份数学参数（<code>circle-2025-model.json</code>）、计算模块、绘图工具与播放器；课堂目的、视窗尺度、开放操作的阶段及最终揭示边界不同，而非两套独立网页工程。</p>
+    <p>本对照用于验证架构与教学意图分流行为，尚未经真实课堂学生学习效果实验。</p>
+  </aside>
+</main>
+</html>
