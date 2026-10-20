@@ -4,7 +4,7 @@
   if(typeof module==='object'&&module.exports)module.exports=api;else root.MathModules=api;
 })(globalThis,function(M){
   'use strict';
-  const version='2.7.0', blue='#315eca', orange='#b65320';
+  const version='2.8.0', blue='#315eca', orange='#b65320';
   const assert=(condition,message)=>{if(!condition)throw new Error(message);};
   const number=(x,name)=>assert(Number.isFinite(x),`${name}: finite number required`);
   const text=(x,name)=>assert(typeof x==='string'&&x.trim().length>0,`${name}: text required`);
@@ -342,7 +342,7 @@
       }
     },
     'function-graph':{
-      version:'1.0.0',parameter:'model.param',fields:[],layers:[],objects:[],
+      version:'1.1.0',parameter:'model.param',fields:[],layers:[],objects:[],
       objectTypes:Object.keys(FG_KEYS),
       schema:m=>fgGet(m).schema,
       validate:fgValidate,
@@ -355,8 +355,8 @@
         const labelAt=(c,pt,importance)=>{if(!c.o.label)return;const t=bind(c.o.label,d);
           if(pt&&pt.every(Number.isFinite)&&p.inside(pt))labels.push({pt,t,id:c.id,importance,color:c.color});
           else p.labelEvidence.push({id:c.id,text:t,importance,anchor:null,status:'omitted',reason:'labelled object not visible in current view'});};
-        /* 曲线标签默认放在右侧可见处：从 85% 宽度向左找第一个在视窗内的点。 */
-        const curveAnchor=c=>{const xs=c.o.labelAt!==undefined?[c.o.labelAt]:Array.from({length:60},(_,i)=>xHi-span*(0.15+0.012*i));
+        /* 曲线标签默认放在右侧可见处：从 85% 宽度向左找第一个在视窗内的点；labelAt 处不在视窗内时也退回这个搜索，不直接省略。 */
+        const curveAnchor=c=>{const xs=[...(c.o.labelAt!==undefined?[c.o.labelAt]:[]),...Array.from({length:60},(_,i)=>xHi-span*(0.15+0.012*i))];
           for(const x of xs){const y=c.at(x,a);if(Number.isFinite(y)&&p.inside([x,y]))return [x,y];}return null;};
         for(const c of C.objects){if(!layers.includes(c.id))continue;const g=d.geo[c.id];
           if(c.optional&&g===undefined){if(c.o.label)p.labelEvidence.push({id:c.id,text:c.o.label,importance:'essential',anchor:null,status:'omitted',reason:'optional object does not exist at this parameter value'});continue;}
@@ -366,8 +366,11 @@
             for(const q of c.pieces)for(const [x,side] of [[q.from,q.left],[q.to,q.right]]){if(side==='none')continue;const y=q.f({x,[C.param]:a});
               if(Number.isFinite(y)&&p.inside([x,y]))p.point([x,y],side==='closed'?{fill:c.color,r:5}:{fill:'#ffffff',stroke:c.color,'stroke-width':2.5,r:5});}
             labelAt(c,curveAnchor(c),'supporting');}
-          else if(c.type==='hline'){p.line([xLo-span,g],[xHi+span,g],style(c));labelAt(c,[xHi-span*0.14,g],'supporting');}
-          else if(c.type==='vline'){p.line([g,yLo-span],[g,yHi+span],{...style(c),'stroke-dasharray':c.o.dash===false?undefined:'8 6'});labelAt(c,[g,yHi-(yHi-yLo)*0.08],'supporting');}
+          /* 直线贴近坐标轴时，标签让开轴字母的固定位置（x 在右端、y 在顶端），否则轴字母会被挤掉。 */
+          else if(c.type==='hline'){const nearAxis=yLo<=0&&yHi>=0&&Math.abs(g)<0.08*(yHi-yLo);
+            p.line([xLo-span,g],[xHi+span,g],style(c));labelAt(c,[xHi-span*(nearAxis?0.32:0.14),g],'supporting');}
+          else if(c.type==='vline'){const nearAxis=xLo<=0&&xHi>=0&&Math.abs(g)<0.08*span;
+            p.line([g,yLo-span],[g,yHi+span],{...style(c),'stroke-dasharray':c.o.dash===false?undefined:'8 6'});labelAt(c,[g,yHi-(yHi-yLo)*(nearAxis?0.25:0.08)],'supporting');}
           else if(c.type==='tangent'){const n=Math.hypot(1,g.slope),u=[1/n,g.slope/n],L=4*span;
             p.line([g.x-L*u[0],g.y-L*u[1]],[g.x+L*u[0],g.y+L*u[1]],style(c));p.point([g.x,g.y],{fill:c.color,r:4});
             const t=span*0.18,ahead=[g.x+t*u[0],g.y+t*u[1]],behind=[g.x-t*u[0],g.y-t*u[1]];labelAt(c,p.inside(ahead)?ahead:behind,'supporting');}
@@ -375,8 +378,14 @@
           else if(c.type==='keypoint'){p.point(g,c.o.open?{fill:'#ffffff',stroke:c.color,'stroke-width':2.5,r:5}:{fill:c.color});labelAt(c,g,'essential');}
           else if(c.type==='intersections'){for(const q of g)if(p.inside(q))p.point(q,{fill:c.color});hidden.push(...g);}
         }
+        /* 坐标轴在 draw 之后才放 O/x/y，且位置固定、不能避让；先按 axes() 的同一算法预留它们的位置，
+           放完本模块的标签再撤掉预留，避免长标签避让时压住轴字母。 */
+        const reserved=[],reserve=(pt,text,dx,dy,fs)=>{if(!p.inside(pt))return;const [px,py]=p.map(pt),w=Math.min(p.width-8,Array.from(text).length*0.58*fs+6),h=fs+6;
+          const r={x:Math.max(4,Math.min(p.width-w-4,px+dx)),y:Math.max(4,Math.min(p.height-h-4,py+dy-h)),w,h,text:'',point:pt,fixed:true,leader:false,id:null,importance:'decorative'};p.labels.push(r);reserved.push(r);};
+        reserve([0,0],'O',-23,28,20);if(yLo<=0&&yHi>=0)reserve([xHi,0],view.axisX||'x',-14,-12,22);if(xLo<=0&&xHi>=0)reserve([0,yHi],view.axisY||'y',12,28,22);
         /* 必要身份（点、关键点）先占位，曲线和直线名称后放，拥挤时省略的是次要标签。 */
         for(const l of labels.sort((u,v)=>(u.importance==='essential'?0:1)-(v.importance==='essential'?0:1)))p.label(l.pt,l.t,{id:l.id,importance:l.importance,fill:l.color});
+        for(const r of reserved)p.labels.splice(p.labels.indexOf(r),1);
         return {notice:layers.some(id=>C.byId.get(id).type==='intersections')?outsideNotice(p,hidden):''};
       }
     }

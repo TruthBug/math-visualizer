@@ -17,7 +17,7 @@
       "model": {
         "param": "a",
         "objects": [
-          { "id": "f", "type": "curve", "expr": "x^3-3*x", "domain": [[-3.2, 3.2]], "label": "y=x³−3x", "labelAt": 2.2 },
+          { "id": "f", "type": "curve", "expr": "x^3-3*x", "domain": [[-3.2, 3.2]], "label": "y=x³−3x", "labelAt": 2.1 },
           { "id": "level", "type": "hline", "y": "a", "label": "y=a" },
           { "id": "cross", "type": "intersections", "of": ["f", "level"] },
           { "id": "max", "type": "keypoint", "on": "f", "x": "-1", "y": "2", "kind": "max", "label": "极大值 2" },

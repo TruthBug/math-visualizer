@@ -78,7 +78,9 @@
     setupDrag(pos,scene,step);
     visual.innerHTML=out.svg;$('step-title').textContent=step.title;
     for(const k of ['body','formula','question'])$(k).textContent=out[k];$('formula').hidden=!out.formula;
-    $('notice').textContent=[dragOn(pos)?'可在图上拖动 · 方向键微调':'',out.notice,out.collisions.length?`已省略：${out.collisions.slice(0,3).map(c=>c.text).join('、')} 等 ${out.collisions.length} 项。`:''].filter(Boolean).join(' ');
+    /* 页面只提示被挤掉的身份标签；普通刻度省略可恢复、不算缺口（见 validation.md），不在课堂画面上提示，完整清单仍在审校包与 --inspect 里。 */
+    const lost=(out.labelEvidence||[]).filter(e=>e.status==='omitted'&&e.anchor&&e.importance!=='decorative').map(e=>e.text);
+    $('notice').textContent=[dragOn(pos)?'可在图上拖动 · 方向键微调':'',out.notice,lost.length?`已省略：${lost.slice(0,3).join('、')} 等 ${lost.length} 项。`:''].filter(Boolean).join(' ');
     $('controls').hidden=!step.interactive;$('counter').textContent=`${current+1} / ${steps.length}`;
     $('previous').disabled=current===0;$('next').disabled=current===steps.length-1;
     tabs.forEach((b,i)=>{if(i===current)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');});

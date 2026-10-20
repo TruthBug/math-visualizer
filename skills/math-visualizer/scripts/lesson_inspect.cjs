@@ -73,7 +73,9 @@ function inspect(config) {
         const omitted = ev.filter(e => e.status === 'omitted');
         return {
           value: v, initial: v === scene.control.initial, body: out.body, formula: out.formula, question: out.question,
-          omittedLabels: omitted.filter(e => e.importance !== 'decorative').map(e => e.text),
+          /* anchor 为空表示对象此时不存在或不在视窗内（不画是对的）；有 anchor 却省略的才是被挤掉。 */
+          omittedLabels: omitted.filter(e => e.importance !== 'decorative' && e.anchor).map(e => e.text),
+          absentLabels: omitted.filter(e => !e.anchor).map(e => e.text),
           omittedTicks: omitted.filter(e => e.importance === 'decorative').map(e => e.text),
           notice: out.notice || '',
         };
@@ -97,6 +99,7 @@ function formatReport(report) {
         const issues = [];
         if (x.omittedLabels.length) issues.push(`被省略的标签：${x.omittedLabels.join('、')}`);
         if (x.omittedTicks.length) issues.push(`被挤掉的刻度：${x.omittedTicks.join('、')}`);
+        if (x.absentLabels.length) issues.push(`此时不在画面内（不画）：${x.absentLabels.join('、')}`);
         if (x.notice) issues.push(`提示：${x.notice}`);
         L.push(`- ${sc.parameter}=${x.value}${x.initial ? '（初始）' : ''}：${issues.join('；') || '无省略、无提示'}`);
         if (x.formula) L.push(`  公式：${x.formula}`);

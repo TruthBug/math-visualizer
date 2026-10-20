@@ -425,7 +425,12 @@ function cmdPack(args) {
   const taskId = get('--task'), toolFix = get('--tool-fix');
   if (!taskId) throw new Error('pack 需要 --task <任务ID>（先 begin 创建任务周期）');
   const outIdx = args.indexOf('--out');
-  const outDir = outIdx >= 0 ? path.resolve(args[outIdx + 1]) : path.resolve('review-packets');
+  /* 默认把审校包放在配置文件旁边：agent 常在 Skill 安装目录里运行命令，写到当前目录会把课程证据混进 Skill 本体，
+     更新 Skill 时被一起清掉。配置本身在 Skill 目录里（随包配置）时不猜位置，要求显式 --out。 */
+  const inSkill = f => { const r = path.relative(SKILL, path.resolve(f)); return r && !r.startsWith('..') && !path.isAbsolute(r); };
+  if (outIdx < 0 && configs.some(inSkill)) throw new Error('这个配置在 Skill 安装目录里，审校包不能默认写在它旁边：先把配置复制到你的课程目录再审校，或用 --out 指定 Skill 目录以外的输出目录。');
+  const outDir = outIdx >= 0 ? path.resolve(args[outIdx + 1])
+    : configs.length && !cases.length ? path.join(path.dirname(path.resolve(configs[0])), 'review-packets') : path.resolve('review-packets');
   const targets = [...cases.map(id => ({ kind: 'case', id })), ...configs.map(id => ({ kind: 'config', id }))];
   if (!targets.length) throw new Error('pack 需要 --case <id> 或 --config <file.json>');
   fs.mkdirSync(outDir, { recursive: true });

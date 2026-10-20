@@ -81,3 +81,35 @@ test('screenshot plan covers each step plus stops at the first size only, and fi
   assert.throws(()=>S.findBrowser(null,{},'linux',()=>false),/没找到 Chrome 或 Edge/);
   assert.throws(()=>S.readConfig('<html></html>'),/不是 build_lesson.cjs 生成的课件/);
 });
+test('function-graph keeps axis letters and falls back when labelAt is outside the view',()=>{
+  for(const [f,v,i] of [['templates/param-zero-count.json',0,0],['gaokao-2022-q10.json',0.5,3],['gaokao-2024-q6.json',0,3]]){
+    const r=M.render(load(f).scenes[0],v,i),lost=r.labelEvidence.filter(e=>e.status==='omitted'&&e.anchor&&e.importance!=='decorative');
+    assert.deepEqual(lost.map(e=>e.text),[],`${f} step ${i+1}`);
+  }
+  const s=load('templates/param-zero-count.json').scenes[0];s.model.objects[0].labelAt=2.2;// f(2.2)≈4.05，超出视窗上沿 4
+  assert.ok(M.render(s,0,0).labelEvidence.some(e=>e.id==='f'&&e.status==='rendered'));
+});
+test('page notice lists lost identity labels but not crowded-out ticks',()=>{
+  const nodes=new Map();
+  class El{constructor(){this.listeners={};this.children=[];this.attrs={};this.textContent='';this.hidden=false;}addEventListener(k,f){this.listeners[k]=f;}append(x){this.children.push(x);}replaceChildren(){this.children=[];}setAttribute(k,v){this.attrs[k]=String(v);}removeAttribute(k){delete this.attrs[k];}getBoundingClientRect(){return{left:0,top:0,width:680,height:450};}}
+  const get=id=>{if(!nodes.has(id))nodes.set(id,new El());return nodes.get(id);};get('lesson-data').textContent=JSON.stringify(load('gaokao-2024-q6.json'));
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../assets/player.js'),'utf8'),{MathModules:M,MathViz:V,URLSearchParams,location:{hash:'#step=4'},document:{getElementById:get,createElement:()=>new El(),addEventListener(){}}});
+  const ticks=M.render(load('gaokao-2024-q6.json').scenes[0],-0.5,3).labelEvidence.filter(e=>e.status==='omitted'&&e.importance==='decorative');
+  assert.ok(ticks.length>0,'this state does crowd out ticks');
+  assert.ok(!get('notice').textContent.includes('已省略'),get('notice').textContent);
+});
+test('pack writes review packets next to the config, and refuses to default inside the Skill',()=>{
+  const os=require('node:os'),{spawnSync}=require('node:child_process'),cli=path.join(__dirname,'teaching_review.cjs');
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'mv-pack-')),cwd=fs.mkdtempSync(path.join(os.tmpdir(),'mv-cwd-'));
+  try{
+    const cfg=path.join(dir,'lesson.json');fs.copyFileSync(path.join(__dirname,'../assets/configs/templates/param-zero-count.json'),cfg);
+    fs.writeFileSync(path.join(dir,'scope.md'),'测试范围');
+    const run=args=>spawnSync(process.execPath,[cli,...args],{cwd,encoding:'utf8'});
+    assert.equal(run(['begin','--config',cfg,'--task','t-pack','--scope-file',path.join(dir,'scope.md')]).status,0);
+    const r=run(['pack','--config',cfg,'--task','t-pack']);assert.equal(r.status,0,r.stderr);
+    assert.ok(fs.readdirSync(path.join(dir,'review-packets')).some(f=>f.endsWith('.packet.json')));
+    assert.ok(!fs.existsSync(path.join(cwd,'review-packets')),'nothing is written to the current directory');
+    const inSkill=run(['pack','--config',path.join(__dirname,'../assets/configs/templates/param-zero-count.json'),'--task','t-pack']);
+    assert.notEqual(inSkill.status,0);assert.match(inSkill.stderr,/Skill 安装目录里.*--out/);
+  }finally{fs.rmSync(dir,{recursive:true,force:true});fs.rmSync(cwd,{recursive:true,force:true});}
+});
